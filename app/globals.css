@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+@theme {
+  --color-vision-navy: #0A2540;
+  --color-vision-navy-light: #123B66;
+  --color-vision-gold: #D4AF37;
+  --color-vision-gold-hover: #b8962a;
+}
+
+@layer base {
+  body {
+    @apply antialiased text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-950 transition-colors duration-300;
+  }
+}
