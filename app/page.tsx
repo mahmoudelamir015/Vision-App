@@ -1,51 +1,115 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'motion/react';
-import { User, Users, GraduationCap, Lock, ArrowRight, Eye, EyeOff, Moon, Sun, Phone } from 'lucide-react';
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { AnimatePresence, motion } from "motion/react";
+import {
+  ArrowRight,
+  Eye,
+  EyeOff,
+  GraduationCap,
+  Lock,
+  Moon,
+  Phone,
+  Sun,
+  User,
+  Users,
+} from "lucide-react";
 
-type Role = 'student' | 'teacher' | 'parent';
-type ViewState = 'login' | 'signup' | 'forgot_password';
+type Role = "student" | "parent" | "teacher";
+type ViewState = "login" | "signup" | "forgot_password";
+type StudentStage = "" | "primary" | "prep" | "secondary";
+type SecondaryTrack = "" | "arts" | "science" | "math";
+type TeacherStage = "" | "primary" | "prep" | "secondary";
+
+const roleTabs: Array<{ id: Role; label: string; icon: typeof User }> = [
+  { id: "student", label: "طالب", icon: User },
+  { id: "parent", label: "ولي أمر", icon: Users },
+  { id: "teacher", label: "معلم", icon: GraduationCap },
+];
+
+const stageGrades: Record<Exclude<StudentStage, "">, string[]> = {
+  primary: [
+    "الصف الأول الابتدائي",
+    "الصف الثاني الابتدائي",
+    "الصف الثالث الابتدائي",
+    "الصف الرابع الابتدائي",
+    "الصف الخامس الابتدائي",
+    "الصف السادس الابتدائي",
+  ],
+  prep: [
+    "الصف الأول الإعدادي",
+    "الصف الثاني الإعدادي",
+    "الصف الثالث الإعدادي",
+  ],
+  secondary: [
+    "الصف الأول الثانوي ",
+    "الصف الثاني الثانوي ",
+    "الصف الثالث الثانوي ",
+  ],
+};
+
+const secondaryTracks: Array<{ value: SecondaryTrack; label: string }> = [
+  { value: "arts", label: "أدبي" },
+  { value: "science", label: "علمي علوم" },
+  { value: "math", label: "علمي رياضة" },
+];
+
+const teacherStages: Array<{ value: TeacherStage; label: string }> = [
+  { value: "primary", label: "ابتدائي" },
+  { value: "prep", label: "إعدادي" },
+  { value: "secondary", label: "ثانوي" },
+];
 
 export default function AuthPage() {
+  const router = useRouter();
   const [showSplash, setShowSplash] = useState(true);
-  const [view, setView] = useState<ViewState>('login');
-  const [role, setRole] = useState<Role>('student');
+  const [view, setView] = useState<ViewState>("login");
+  const [role, setRole] = useState<Role>("student");
   const [showPassword, setShowPassword] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() =>
-    typeof window !== 'undefined' && document.documentElement.classList.contains('dark'),
+    typeof document !== "undefined" && document.documentElement.classList.contains("dark"),
   );
-  const [studentStage, setStudentStage] = useState('');
-  const router = useRouter();
+  const [studentStage, setStudentStage] = useState<StudentStage>("");
+  const [studentGrade, setStudentGrade] = useState("");
+  const [studentTrack, setStudentTrack] = useState<SecondaryTrack>("");
+  const [teacherStage, setTeacherStage] = useState<TeacherStage>("");
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const timer = window.setTimeout(() => {
       setShowSplash(false);
     }, 2500);
-    return () => clearTimeout(timer);
+
+    return () => window.clearTimeout(timer);
   }, []);
 
   const toggleDarkMode = () => {
-    document.documentElement.classList.toggle('dark');
-    setIsDarkMode(!isDarkMode);
+    document.documentElement.classList.toggle("dark");
+    setIsDarkMode((current) => !current);
   };
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (role === 'teacher') {
-      router.push('/teacher/dashboard');
-    } else if (role === 'student') {
-      router.push('/student/dashboard');
-    } else {
-      router.push('/parent/dashboard');
+  const submitTarget = () => {
+    if (view === "login") {
+      if (role === "student") router.push("/student/dashboard");
+      if (role === "parent") router.push("/parent/dashboard");
+      if (role === "teacher") router.push("/teacher/dashboard");
+      return;
     }
+
+    if (role === "student") router.push("/student/dashboard");
+    if (role === "parent") router.push("/parent/dashboard");
+    if (role === "teacher") router.push("/teacher/dashboard");
+  };
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    submitTarget();
   };
 
   if (showSplash) {
     return (
-      <div className="fixed inset-0 bg-[#0A2540] flex items-center justify-center z-50">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0A2540]" dir="rtl">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1.1, opacity: 1 }}
@@ -53,275 +117,426 @@ export default function AuthPage() {
           transition={{ duration: 1.5, ease: "easeInOut", repeatType: "reverse", repeat: Infinity }}
           className="relative"
         >
-          {/* Outer glow */}
-          <div className="absolute inset-0 bg-[#D4AF37] blur-[100px] opacity-20 rounded-full"></div>
-          <div className="text-white text-4xl font-extrabold text-center relative z-10 drop-shadow-[0_0_30px_rgba(212,175,55,0.4)]">
-            <Image 
-              src="/logo.png" 
-              alt="Vision Educational Center" 
-              width={256}
-              height={256}
-              className="w-48 h-48 md:w-64 md:h-64 object-contain mx-auto"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
-            />
-          </div>
+          <div className="absolute inset-0 rounded-full bg-[#D4AF37] blur-[100px] opacity-20" />
+          <Image
+            src="/logo.png"
+            alt="Vision Educational Center"
+            width={256}
+            height={256}
+            className="relative z-10 mx-auto h-48 w-48 object-contain md:h-64 md:w-64"
+            priority
+          />
         </motion.div>
       </div>
     );
   }
 
-  const roleData = [
-    { id: 'student', label: 'طالب', icon: User },
-    { id: 'parent', label: 'ولي أمر', icon: Users },
-    { id: 'teacher', label: 'معلم', icon: GraduationCap },
-  ] as const;
-
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#061524] flex flex-col items-center justify-center p-4 relative overflow-hidden font-cairo transition-colors duration-300" dir="rtl">
-      
-      {/* Theme Toggle Top Left */}
-      <div className="absolute top-6 left-6 z-50">
-        <button onClick={toggleDarkMode} className="p-3 bg-white dark:bg-[#061524] text-slate-600 dark:text-slate-300 rounded-full border border-black/5 dark:border-white/5 shadow-sm hover:scale-105 transition-transform">
-           {isDarkMode ? <Sun className="w-6 h-6 text-[#D4AF37]" /> : <Moon className="w-6 h-6 text-[#0A2540]" />}
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-50 p-4 font-cairo transition-colors duration-300 dark:bg-[#061524]" dir="rtl">
+      <div className="absolute left-6 top-6 z-50">
+        <button
+          type="button"
+          onClick={toggleDarkMode}
+          className="rounded-full border border-black/5 bg-white p-3 text-slate-600 shadow-sm transition-transform hover:scale-105 dark:border-white/5 dark:bg-[#061524] dark:text-slate-300"
+        >
+          {isDarkMode ? <Sun className="h-6 w-6 text-[#D4AF37]" /> : <Moon className="h-6 w-6 text-[#0A2540]" />}
         </button>
       </div>
 
-      {/* Glassmorphism Background Decor */}
-      <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-[#D4AF37]/20 dark:bg-[#D4AF37]/10 rounded-full blur-[120px] pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-blue-500/10 dark:bg-blue-500/5 rounded-full blur-[150px] pointer-events-none"></div>
-      
-      <motion.div 
+      <div className="pointer-events-none absolute right-[-5%] top-[-10%] h-[500px] w-[500px] rounded-full bg-[#D4AF37]/20 blur-[120px] dark:bg-[#D4AF37]/10" />
+      <div className="pointer-events-none absolute bottom-[-10%] left-[-10%] h-[600px] w-[600px] rounded-full bg-blue-500/10 blur-[150px] dark:bg-blue-500/5" />
+
+      <motion.div
         initial={{ y: 30, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className="w-full max-w-lg relative z-10"
+        className="relative z-10 w-full max-w-lg"
       >
-        {/* Glass Card */}
-        <div className="bg-white/70 dark:bg-[#0A2540]/60 backdrop-blur-xl border border-white/50 dark:border-white/20 rounded-[2rem] p-8 md:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.05)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] relative overflow-hidden transition-colors">
-          
-          {/* Inner subtle glow */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1 bg-gradient-to-r from-transparent via-[#D4AF37]/50 to-transparent"></div>
+        <div className="relative overflow-hidden rounded-[2rem] border border-white/50 bg-white/75 p-8 shadow-[0_20px_50px_rgba(0,0,0,0.05)] backdrop-blur-xl transition-colors dark:border-white/10 dark:bg-[#0A2540]/65 dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] md:p-10">
+          <div className="absolute left-1/2 top-0 h-1 w-full -translate-x-1/2 bg-gradient-to-r from-transparent via-[#D4AF37]/50 to-transparent" />
 
-          {/* Logo Heading */}
-          <div className="flex flex-col items-center mb-8">
+          <div className="mb-8 flex flex-col items-center">
             <Image
               src="/logo.png"
               alt="Logo"
               width={96}
               height={96}
               className="mb-4 h-24 w-24 object-contain drop-shadow-xl"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
+              priority
             />
-            <h1 className="text-3xl font-extrabold text-[#0A2540] dark:text-white text-center tracking-tight">
-              {view === 'login' ? 'تسجيل الدخول' : view === 'signup' ? 'إنشاء حساب جديد' : 'استعادة كلمة المرور'}
+            <h1 className="text-center text-3xl font-extrabold tracking-tight text-[#0A2540] dark:text-white">
+              {view === "login" ? "تسجيل الدخول" : view === "signup" ? "إنشاء حساب جديد" : "استعادة كلمة المرور"}
             </h1>
-            <p className="text-slate-500 dark:text-white/60 text-sm mt-2 font-bold">
-              {view === 'forgot_password' ? 'أدخل رقم الهاتف المرتبط بحسابك' : 'مرحباً بك في منصة رؤية التعليمية'}
+            <p className="mt-2 text-sm font-bold text-slate-500 dark:text-white/60">
+              {view === "forgot_password"
+                ? "أدخل رقم الهاتف المرتبط بالحساب"
+                : "مرحباً بك في منصة رؤية التعليمية"}
             </p>
           </div>
 
-          {/* Role Switcher Tabs */}
-          {view !== 'forgot_password' && (
-            <div className="flex p-1 bg-slate-200/50 dark:bg-black/20 rounded-2xl mb-8 backdrop-blur-sm border border-black/5 dark:border-white/5 relative">
-              {roleData.map((r) => {
-                const Icon = r.icon;
-                const isActive = role === r.id;
+          {view !== "forgot_password" ? (
+            <div className="mb-8 flex rounded-2xl border border-black/5 bg-slate-200/50 p-1 dark:border-white/5 dark:bg-black/20">
+              {roleTabs.map((item) => {
+                const Icon = item.icon;
+                const active = role === item.id;
+
                 return (
                   <button
-                    key={r.id}
-                    onClick={() => setRole(r.id)}
-                    className={`flex-1 flex flex-col items-center justify-center gap-1.5 py-3 relative z-10 transition-colors duration-300 ${isActive ? 'text-white dark:text-[#0A2540]' : 'text-slate-500 dark:text-white/60 hover:text-[#0A2540] dark:hover:text-white'}`}
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      setRole(item.id);
+                      setShowPassword(false);
+                      setStudentStage("");
+                      setStudentGrade("");
+                      setStudentTrack("");
+                      setTeacherStage("");
+                    }}
+                    className={`relative flex-1 py-3 text-sm font-bold transition-colors ${
+                      active
+                        ? "text-white dark:text-[#0A2540]"
+                        : "text-slate-500 hover:text-[#0A2540] dark:text-white/60 dark:hover:text-white"
+                    }`}
                   >
-                    <Icon className="w-5 h-5" />
-                    <span className="text-sm font-bold">{r.label}</span>
-                    {isActive && (
-                      <motion.div 
+                    {active ? (
+                      <motion.div
                         layoutId="role-pill"
-                        className="absolute inset-0 bg-[#0A2540] dark:bg-gradient-to-br dark:from-[#D4AF37] dark:to-yellow-500 rounded-xl -z-10 shadow-lg"
+                        className="absolute inset-0 -z-10 rounded-xl bg-[#0A2540] shadow-lg dark:bg-gradient-to-br dark:from-[#D4AF37] dark:to-yellow-500"
                         transition={{ type: "spring", stiffness: 300, damping: 25 }}
                       />
-                    )}
+                    ) : null}
+                    <span className="relative z-10 flex items-center justify-center gap-2">
+                      <Icon className="h-5 w-5" />
+                      {item.label}
+                    </span>
                   </button>
                 );
               })}
             </div>
-          )}
+          ) : null}
 
-          {/* Form */}
           <AnimatePresence mode="wait">
-            <motion.form 
+            <motion.form
               key={`${view}-${role}`}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.3 }}
-              onSubmit={handleLoginSubmit}
+              onSubmit={handleSubmit}
               className="space-y-5"
             >
-              {view === 'signup' && role === 'student' && (
+              {view === "signup" && role === "student" ? (
                 <div className="space-y-4">
-                  <div>
-                    <label className="text-[#0A2540]/80 dark:text-white/80 text-sm font-bold mb-1.5 block">الاسم الرباعي</label>
-                    <div className="relative">
-                      <input type="text" className="w-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 text-[#0A2540] dark:text-white placeholder-slate-400 dark:placeholder-white/30 rounded-xl px-4 py-3.5 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all font-medium" placeholder="أدخل اسمك الكامل" />
-                    </div>
-                  </div>
-                  <div>
-                     <label className="text-[#0A2540]/80 dark:text-white/80 text-sm font-bold mb-1.5 block">المرحلة الدراسية</label>
-                     <select value={studentStage} onChange={(e) => setStudentStage(e.target.value)} className="w-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 text-[#0A2540] dark:text-white rounded-xl px-4 py-3.5 focus:outline-none focus:border-[#D4AF37] appearance-none">
-                       <option value="" className="text-slate-500">اختر المرحلة</option>
-                       <option value="prep" className="text-black">المرحلة الإعدادية</option>
-                       <option value="sec" className="text-black">المرحلة الثانوية</option>
-                     </select>
-                  </div>
-                  {studentStage === 'sec' && (
-                    <div>
-                       <label className="text-[#0A2540]/80 dark:text-white/80 text-sm font-bold mb-1.5 block">القسم</label>
-                       <select className="w-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 text-[#0A2540] dark:text-white rounded-xl px-4 py-3.5 focus:outline-none focus:border-[#D4AF37] appearance-none">
-                         <option value="" className="text-slate-500">اختر القسم</option>
-                         <option value="sci-math" className="text-black">علمي رياضة</option>
-                         <option value="sci-bio" className="text-black">علمي علوم</option>
-                         <option value="art" className="text-black">أدبي</option>
-                       </select>
-                    </div>
-                  )}
-                </div>
-              )}
+                  <label className="block text-sm font-bold text-[#0A2540]/80 dark:text-white/80">
+                    الاسم الرباعي
+                    <input
+                      type="text"
+                      placeholder="أدخل اسمك الكامل"
+                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 font-medium text-[#0A2540] outline-none transition-all placeholder:text-slate-400 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] dark:border-white/10 dark:bg-black/20 dark:text-white dark:placeholder:text-white/30"
+                    />
+                  </label>
 
-              {view === 'signup' && role === 'parent' && (
+                  <label className="block text-sm font-bold text-[#0A2540]/80 dark:text-white/80">
+                    المرحلة الدراسية
+                    <select
+                      value={studentStage}
+                      onChange={(event) => {
+                        const nextStage = event.target.value as StudentStage;
+                        setStudentStage(nextStage);
+                        setStudentGrade("");
+                        setStudentTrack("");
+                      }}
+                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 font-medium text-[#0A2540] outline-none transition-all focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20 dark:text-white"
+                    >
+                      <option value="">اختر المرحلة</option>
+                      <option value="primary">المرحلة الابتدائية</option>
+                      <option value="prep">المرحلة الإعدادية</option>
+                      <option value="secondary">المرحلة الثانوية</option>
+                    </select>
+                  </label>
+
+                  {studentStage ? (
+                    <label className="block text-sm font-bold text-[#0A2540]/80 dark:text-white/80">
+                      الصف الدراسي
+                      <select
+                        value={studentGrade}
+                        onChange={(event) => setStudentGrade(event.target.value)}
+                        className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 font-medium text-[#0A2540] outline-none transition-all focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20 dark:text-white"
+                      >
+                        <option value="">اختر الصف</option>
+                        {stageGrades[studentStage].map((grade) => (
+                          <option key={grade} value={grade}>
+                            {grade}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
+
+                  {studentStage === "secondary" && (studentGrade === "الصف الثاني الثانوي المطور" || studentGrade === "الصف الثالث الثانوي المطور") ? (
+                    <label className="block text-sm font-bold text-[#0A2540]/80 dark:text-white/80">
+                      الشعبة
+                      <select
+                        value={studentTrack}
+                        onChange={(event) => setStudentTrack(event.target.value as SecondaryTrack)}
+                        className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 font-medium text-[#0A2540] outline-none transition-all focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20 dark:text-white"
+                      >
+                        <option value="">اختر الشعبة</option>
+                        {secondaryTracks.map((item) => (
+                          <option key={item.value} value={item.value}>
+                            {item.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
+
+                  <label className="block text-sm font-bold text-[#0A2540]/80 dark:text-white/80">
+                    كلمة المرور
+                    <div className="relative mt-1">
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+                        <Lock className="h-5 w-5 text-slate-400 dark:text-white/40" />
+                      </div>
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 pr-11 pl-11 font-medium text-[#0A2540] outline-none transition-all placeholder:text-slate-400 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] dark:border-white/10 dark:bg-black/20 dark:text-white dark:placeholder:text-white/30"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((current) => !current)}
+                        className="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 transition-colors hover:text-[#0A2540] dark:text-white/40 dark:hover:text-white"
+                      >
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
+                    </div>
+                  </label>
+                </div>
+              ) : null}
+
+              {view === "signup" && role === "parent" ? (
                 <div className="space-y-4">
-                  <div>
-                    <label className="text-[#0A2540]/80 dark:text-white/80 text-sm font-bold mb-1.5 block">أسم ولي الأمر</label>
-                    <div className="relative">
-                      <input type="text" className="w-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 text-[#0A2540] dark:text-white placeholder-slate-400 dark:placeholder-white/30 rounded-xl px-4 py-3.5 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all font-medium" placeholder="الاسم الكامل" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-[#0A2540]/80 dark:text-white/80 text-sm font-bold mb-1.5 block">رقم الهاتف</label>
-                    <div className="relative">
-                      <input type="tel" className="w-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 text-[#0A2540] dark:text-white placeholder-slate-400 dark:placeholder-white/30 rounded-xl px-4 py-3.5 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all font-medium" placeholder="01X XXXX XXXX" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-[#0A2540]/80 dark:text-white/80 text-sm font-bold mb-1.5 block">كود الطالب للربط</label>
-                    <div className="relative">
-                      <input type="text" className="w-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 text-[#0A2540] dark:text-white placeholder-slate-400 dark:placeholder-white/30 rounded-xl px-4 py-3.5 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all font-medium font-mono" placeholder="مثال: VIS-12345" />
-                    </div>
-                  </div>
-                </div>
-              )}
+                  <label className="block text-sm font-bold text-[#0A2540]/80 dark:text-white/80">
+                    اسم ولي الأمر
+                    <input
+                      type="text"
+                      placeholder="الاسم الكامل"
+                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 font-medium text-[#0A2540] outline-none transition-all placeholder:text-slate-400 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] dark:border-white/10 dark:bg-black/20 dark:text-white dark:placeholder:text-white/30"
+                    />
+                  </label>
 
-              {view === 'signup' && role === 'teacher' && (
+                  <label className="block text-sm font-bold text-[#0A2540]/80 dark:text-white/80">
+                    رقم الهاتف
+                    <input
+                      type="tel"
+                      placeholder="01X XXXX XXXX"
+                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 font-medium text-[#0A2540] outline-none transition-all placeholder:text-slate-400 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] dark:border-white/10 dark:bg-black/20 dark:text-white dark:placeholder:text-white/30"
+                    />
+                  </label>
+
+                  <label className="block text-sm font-bold text-[#0A2540]/80 dark:text-white/80">
+                    كود الطالب للربط
+                    <input
+                      type="text"
+                      placeholder="مثال: VIS-12345"
+                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 font-mono font-medium text-[#0A2540] outline-none transition-all placeholder:text-slate-400 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] dark:border-white/10 dark:bg-black/20 dark:text-white dark:placeholder:text-white/30"
+                    />
+                  </label>
+
+                  <label className="block text-sm font-bold text-[#0A2540]/80 dark:text-white/80">
+                    كلمة المرور
+                    <div className="relative mt-1">
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+                        <Lock className="h-5 w-5 text-slate-400 dark:text-white/40" />
+                      </div>
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 pr-11 pl-11 font-medium text-[#0A2540] outline-none transition-all placeholder:text-slate-400 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] dark:border-white/10 dark:bg-black/20 dark:text-white dark:placeholder:text-white/30"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((current) => !current)}
+                        className="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 transition-colors hover:text-[#0A2540] dark:text-white/40 dark:hover:text-white"
+                      >
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
+                    </div>
+                  </label>
+                </div>
+              ) : null}
+
+              {view === "signup" && role === "teacher" ? (
                 <div className="space-y-4">
-                  <div>
-                    <label className="text-[#0A2540]/80 dark:text-white/80 text-sm font-bold mb-1.5 block">الاسم</label>
-                    <div className="relative">
-                      <input type="text" className="w-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 text-[#0A2540] dark:text-white placeholder-slate-400 dark:placeholder-white/30 rounded-xl px-4 py-3.5 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all font-medium" placeholder="أدخل اسمك" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-[#0A2540]/80 dark:text-white/80 text-sm font-bold mb-1.5 block">رقم الهاتف</label>
-                    <div className="relative">
-                      <input type="tel" className="w-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 text-[#0A2540] dark:text-white placeholder-slate-400 dark:placeholder-white/30 rounded-xl px-4 py-3.5 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all font-medium" placeholder="01X XXXX XXXX" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-[#0A2540]/80 dark:text-white/80 text-sm font-bold mb-1.5 block">المادة التي تدرسها</label>
-                    <div className="relative">
-                       <input type="text" className="w-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 text-[#0A2540] dark:text-white placeholder-slate-400 dark:placeholder-white/30 rounded-xl px-4 py-3.5 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all font-medium" placeholder="مثال: الرياضيات، الفيزياء" />
-                    </div>
-                  </div>
-                </div>
-              )}
+                  <label className="block text-sm font-bold text-[#0A2540]/80 dark:text-white/80">
+                    الاسم
+                    <input
+                      type="text"
+                      placeholder="أدخل اسمك"
+                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 font-medium text-[#0A2540] outline-none transition-all placeholder:text-slate-400 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] dark:border-white/10 dark:bg-black/20 dark:text-white dark:placeholder:text-white/30"
+                    />
+                  </label>
 
-              {view === 'forgot_password' ? (
-                <div>
-                  <label className="text-[#0A2540]/80 dark:text-white/80 text-sm font-bold mb-1.5 block">رقم الهاتف المرتبط بالحساب</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                      <Phone className="w-5 h-5 text-slate-400 dark:text-white/40" />
+                  <label className="block text-sm font-bold text-[#0A2540]/80 dark:text-white/80">
+                    رقم الهاتف
+                    <input
+                      type="tel"
+                      placeholder="01X XXXX XXXX"
+                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 font-medium text-[#0A2540] outline-none transition-all placeholder:text-slate-400 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] dark:border-white/10 dark:bg-black/20 dark:text-white dark:placeholder:text-white/30"
+                    />
+                  </label>
+
+                  <label className="block text-sm font-bold text-[#0A2540]/80 dark:text-white/80">
+                    المرحلة الدراسية
+                    <select
+                      value={teacherStage}
+                      onChange={(event) => setTeacherStage(event.target.value as TeacherStage)}
+                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 font-medium text-[#0A2540] outline-none transition-all focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20 dark:text-white"
+                    >
+                      <option value="">اختر المرحلة</option>
+                      {teacherStages.map((item) => (
+                        <option key={item.value} value={item.value}>
+                          {item.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="block text-sm font-bold text-[#0A2540]/80 dark:text-white/80">
+                    المادة التي تدرسها
+                    <input
+                      type="text"
+                      placeholder="مثال: الرياضيات، الفيزياء"
+                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 font-medium text-[#0A2540] outline-none transition-all placeholder:text-slate-400 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] dark:border-white/10 dark:bg-black/20 dark:text-white dark:placeholder:text-white/30"
+                    />
+                  </label>
+
+                  <label className="block text-sm font-bold text-[#0A2540]/80 dark:text-white/80">
+                    كلمة المرور
+                    <div className="relative mt-1">
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+                        <Lock className="h-5 w-5 text-slate-400 dark:text-white/40" />
+                      </div>
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 pr-11 pl-11 font-medium text-[#0A2540] outline-none transition-all placeholder:text-slate-400 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] dark:border-white/10 dark:bg-black/20 dark:text-white dark:placeholder:text-white/30"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((current) => !current)}
+                        className="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 transition-colors hover:text-[#0A2540] dark:text-white/40 dark:hover:text-white"
+                      >
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
                     </div>
-                    <input type="tel" required className="w-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 text-[#0A2540] dark:text-white placeholder-slate-400 dark:placeholder-white/30 rounded-xl px-4 py-3.5 pr-11 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all font-medium" placeholder="01X XXXX XXXX" />
-                  </div>
+                  </label>
+                </div>
+              ) : null}
+
+              {view === "forgot_password" ? (
+                <div className="space-y-2">
+                  <label className="block text-sm font-bold text-[#0A2540]/80 dark:text-white/80">
+                    رقم الهاتف المرتبط بالحساب
+                    <div className="relative mt-1">
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+                        <Phone className="h-5 w-5 text-slate-400 dark:text-white/40" />
+                      </div>
+                      <input
+                        type="tel"
+                        placeholder="01X XXXX XXXX"
+                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 pr-11 font-medium text-[#0A2540] outline-none transition-all placeholder:text-slate-400 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] dark:border-white/10 dark:bg-black/20 dark:text-white dark:placeholder:text-white/30"
+                      />
+                    </div>
+                  </label>
                 </div>
               ) : (
                 <>
-                  <div>
-                    <label className="text-[#0A2540]/80 dark:text-white/80 text-sm font-bold mb-1.5 block">رقم الهاتف أو كود الدخول</label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                        <Phone className="w-5 h-5 text-slate-400 dark:text-white/40" />
+                  <label className="block text-sm font-bold text-[#0A2540]/80 dark:text-white/80">
+                    رقم الهاتف أو كود الدخول
+                    <div className="relative mt-1">
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+                        <Phone className="h-5 w-5 text-slate-400 dark:text-white/40" />
                       </div>
-                      <input type="text" required className="w-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 text-[#0A2540] dark:text-white placeholder-slate-400 dark:placeholder-white/30 rounded-xl px-4 py-3.5 pr-11 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all font-medium" placeholder="01X XXXX XXXX" />
+                      <input
+                        type="text"
+                        placeholder="01X XXXX XXXX"
+                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 pr-11 font-medium text-[#0A2540] outline-none transition-all placeholder:text-slate-400 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] dark:border-white/10 dark:bg-black/20 dark:text-white dark:placeholder:text-white/30"
+                      />
                     </div>
-                  </div>
+                  </label>
 
-                  <div>
-                    <div className="flex justify-between items-center mb-1.5">
-                      <label className="text-[#0A2540]/80 dark:text-white/80 text-sm font-bold block">كلمة المرور</label>
-                      {view === 'login' && (
-                        <button type="button" onClick={() => setView('forgot_password')} className="text-xs font-bold text-[#D4AF37] hover:underline">نسيت كلمة المرور؟</button>
-                      )}
-                    </div>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                        <Lock className="w-5 h-5 text-slate-400 dark:text-white/40" />
+                  <label className="block text-sm font-bold text-[#0A2540]/80 dark:text-white/80">
+                    كلمة المرور
+                    <div className="relative mt-1">
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+                        <Lock className="h-5 w-5 text-slate-400 dark:text-white/40" />
                       </div>
-                      <input type={showPassword ? "text" : "password"} required className="w-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 text-[#0A2540] dark:text-white placeholder-slate-400 dark:placeholder-white/30 rounded-xl px-4 py-3.5 pr-11 pl-11 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all font-medium" placeholder="••••••••"/>
-                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 dark:text-white/40 hover:text-[#0A2540] dark:hover:text-white transition-colors">
-                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 pr-11 pl-11 font-medium text-[#0A2540] outline-none transition-all placeholder:text-slate-400 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] dark:border-white/10 dark:bg-black/20 dark:text-white dark:placeholder:text-white/30"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((current) => !current)}
+                        className="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 transition-colors hover:text-[#0A2540] dark:text-white/40 dark:hover:text-white"
+                      >
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                       </button>
                     </div>
-                  </div>
+                  </label>
                 </>
               )}
 
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                type={view === 'forgot_password' ? 'button' : 'submit'}
+                type={view === "forgot_password" ? "button" : "submit"}
                 onClick={() => {
-                  if (view === 'forgot_password') {
-                    alert('تم إرسال رمز الاستعادة إلى رقم الهاتف.');
-                    setView('login');
+                  if (view === "forgot_password") {
+                    setView("login");
                   }
                 }}
-                className="w-full bg-[#0A2540] dark:bg-gradient-to-r dark:from-[#D4AF37] dark:to-yellow-600 text-white dark:text-[#0A2540] font-extrabold text-lg py-4 rounded-xl shadow-lg dark:shadow-[0_10px_20px_rgba(212,175,55,0.3)] hover:shadow-xl dark:hover:shadow-[0_15px_30px_rgba(212,175,55,0.4)] flex items-center justify-center gap-2 mt-4 transition-all"
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#0A2540] py-4 text-lg font-extrabold text-white shadow-lg transition-all hover:shadow-xl dark:bg-gradient-to-r dark:from-[#D4AF37] dark:to-yellow-600 dark:text-[#0A2540]"
               >
-                {view === 'login' ? 'تأكيد الدخول' : view === 'signup' ? 'إنشاء حساب جديد' : 'إرسال رمز الاستعادة'} 
-                <ArrowRight className="w-5 h-5 rtl:rotate-180" />
+                {view === "login" ? "تأكيد الدخول" : view === "signup" ? "إنشاء حساب جديد" : "إرسال رمز الاستعادة"}
+                <ArrowRight className="h-5 w-5 rtl:rotate-180" />
               </motion.button>
             </motion.form>
           </AnimatePresence>
 
           <div className="mt-8 text-center">
-            {view === 'forgot_password' ? (
-              <p className="text-slate-500 dark:text-white/60 text-sm font-bold">
-                تذكرت كلمة المرور؟{' '}
-                <button 
-                  onClick={() => setView('login')}
-                  className="text-[#0A2540] dark:text-[#D4AF37] hover:text-black dark:hover:text-white transition-colors underline decoration-2 underline-offset-4 ml-1"
+            {view === "forgot_password" ? (
+              <p className="text-sm font-bold text-slate-500 dark:text-white/60">
+                تذكرت كلمة المرور؟
+                <button
+                  type="button"
+                  onClick={() => setView("login")}
+                  className="ml-1 underline decoration-2 underline-offset-4 text-[#0A2540] transition-colors hover:text-black dark:text-[#D4AF37] dark:hover:text-white"
                 >
                   العودة لتسجيل الدخول
                 </button>
               </p>
             ) : (
-              <p className="text-slate-500 dark:text-white/60 text-sm font-bold">
-                {view === 'login' ? 'ليس لديك حساب؟' : 'لديك حساب بالفعل؟'}{' '}
-                <button 
-                  onClick={() => setView(view === 'login' ? 'signup' : 'login')}
-                  className="text-[#0A2540] dark:text-[#D4AF37] hover:text-black dark:hover:text-white transition-colors underline decoration-2 underline-offset-4 ml-1"
+              <p className="text-sm font-bold text-slate-500 dark:text-white/60">
+                {view === "login" ? "ليس لديك حساب؟" : "لديك حساب بالفعل؟"}{" "}
+                <button
+                  type="button"
+                  onClick={() => setView(view === "login" ? "signup" : "login")}
+                  className="underline decoration-2 underline-offset-4 text-[#0A2540] transition-colors hover:text-black dark:text-[#D4AF37] dark:hover:text-white"
                 >
-                  {view === 'login' ? 'إنشاء حساب جديد' : 'تسجيل الدخول'}
+                  {view === "login" ? "إنشاء حساب جديد" : "تسجيل الدخول"}
                 </button>
               </p>
             )}
           </div>
 
+          {view === "signup" ? (
+            <div className="mt-6 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm font-bold text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
+              تجهيز الواجهة للربط مع Supabase Auth وقواعد البيانات مستمر، والحقول هنا متقسمة حسب الدور والمرحلة.
+            </div>
+          ) : null}
         </div>
       </motion.div>
     </div>
