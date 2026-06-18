@@ -273,7 +273,7 @@ export default function AuthPage() {
                     </label>
                   ) : null}
 
-                  {studentStage === "secondary" && (studentGrade === "الصف الثاني الثانوي المطور" || studentGrade === "الصف الثالث الثانوي المطور") ? (
+                  {studentStage === "secondary" && (studentGrade === "الصف الثاني الثانوي" || studentGrade === "الصف الثالث الثانوي") ? (
                     <label className="block text-sm font-bold text-[#0A2540]/80 dark:text-white/80">
                       الشعبة
                       <select
