@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Archive, Bell, FileText, GraduationCap, LayoutDashboard, Trophy, Wallet } from 'lucide-react';
 import { DashboardShell, type DashboardNavItem } from '@/components/dashboard/dashboard-shell';
 import { EmptyState } from '@/components/ui/empty-state';
-import { fetchSystemSettings } from '@/lib/supabase/system-settings';
+import { fetchSystemSettings, subscribeToSystemSettings } from '@/lib/supabase/system-settings';
 
 const navItems: DashboardNavItem[] = [
   { id: 'dashboard', label: 'الرئيسية', icon: LayoutDashboard },
@@ -20,6 +20,28 @@ export default function StudentDashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [walletEnabled, setWalletEnabled] = useState(false);
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+  const [notifyStage, setNotifyStage] = useState('');
+  const [notifyGrade, setNotifyGrade] = useState('');
+  const [notifyTrack, setNotifyTrack] = useState('');
+
+  const stageGrades: Record<string, string[]> = {
+    primary: [
+      'الصف الأول الابتدائي',
+      'الصف الثاني الابتدائي',
+      'الصف الثالث الابتدائي',
+      'الصف الرابع الابتدائي',
+      'الصف الخامس الابتدائي',
+      'الصف السادس الابتدائي',
+    ],
+    prep: ['الصف الأول الإعدادي', 'الصف الثاني الإعدادي', 'الصف الثالث الإعدادي'],
+    secondary: ['الصف الأول الثانوي ', 'الصف الثاني الثانوي ', 'الصف الثالث الثانوي '],
+  };
+
+  const secondaryTracks = [
+    { value: 'arts', label: 'أدبي' },
+    { value: 'science', label: 'علمي علوم' },
+    { value: 'math', label: 'علمي رياضة' },
+  ];
 
   useEffect(() => {
     let isMounted = true;
@@ -40,8 +62,15 @@ export default function StudentDashboard() {
 
     void loadSettings();
 
+    const unsubscribe = subscribeToSystemSettings((settings) => {
+      if (isMounted) {
+        setWalletEnabled(Boolean(settings.wallet_enabled));
+      }
+    });
+
     return () => {
       isMounted = false;
+      if (unsubscribe) unsubscribe();
     };
   }, []);
 
@@ -53,10 +82,66 @@ export default function StudentDashboard() {
           0 جديد
         </span>
       </div>
+
+      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div>
+          <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-300">المرحلة</label>
+          <select
+            value={notifyStage}
+            onChange={(e) => {
+              setNotifyStage(e.target.value);
+              setNotifyGrade('');
+              setNotifyTrack('');
+            }}
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 outline-none transition-all dark:border-slate-700 dark:bg-slate-900"
+          >
+            <option value="">كل المراحل</option>
+            <option value="primary">ابتدائي</option>
+            <option value="prep">إعدادي</option>
+            <option value="secondary">ثانوي</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-300">الصف</label>
+          <select
+            value={notifyGrade}
+            onChange={(e) => setNotifyGrade(e.target.value)}
+            disabled={!notifyStage}
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 outline-none transition-all disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900"
+          >
+            <option value="">كل الصفوف</option>
+            {notifyStage &&
+              stageGrades[notifyStage as keyof typeof stageGrades].map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
+              ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-300">الشعبة</label>
+          <select
+            value={notifyTrack}
+            onChange={(e) => setNotifyTrack(e.target.value)}
+            disabled={!(notifyStage === 'secondary' && (notifyGrade === 'الصف الثاني الثانوي ' || notifyGrade === 'الصف الثالث الثانوي '))}
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 outline-none transition-all disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900"
+          >
+            <option value="">كل الشعب</option>
+            {secondaryTracks.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       <EmptyState
         icon={Bell}
         title="لا توجد إشعارات حالياً"
-        description="تنبيهات الامتحانات، الحضور، والرسائل ستظهر هنا بعد اتصال الواجهة بالـ API."
+        description="تنبيهات الامتحانات، الحضور، والرسائل ستظهر هنا بعد اتصال الواجهة بالـ API. اختر المرحلة والصف لتصفية الإشعارات." 
       />
     </div>
   );

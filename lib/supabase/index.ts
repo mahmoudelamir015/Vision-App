@@ -15,7 +15,10 @@ export const supabaseTableNames = {
   systemSettings: "system_settings",
   wallets: "wallets",
   attendance: "attendance",
+  profiles: "profiles",
 } as const;
+
+export type SupabaseRecord = Record<string, unknown>;
 
 let supabaseClient: SupabaseClient | null = null;
 

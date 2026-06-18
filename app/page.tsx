@@ -16,6 +16,8 @@ import {
   User,
   Users,
 } from "lucide-react";
+import { fetchSystemSettings, subscribeToSystemSettings } from "@/lib/supabase/system-settings";
+import { saveUser } from "@/lib/supabase/users";
 
 type Role = "student" | "parent" | "teacher";
 type ViewState = "login" | "signup" | "forgot_password";
@@ -75,6 +77,7 @@ export default function AuthPage() {
   const [studentGrade, setStudentGrade] = useState("");
   const [studentTrack, setStudentTrack] = useState<SecondaryTrack>("");
   const [teacherStage, setTeacherStage] = useState<TeacherStage>("");
+  const [registrationOpen, setRegistrationOpen] = useState(true);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -84,27 +87,122 @@ export default function AuthPage() {
     return () => window.clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadSettings = async () => {
+      const settings = await fetchSystemSettings();
+      if (!isMounted) return;
+      setRegistrationOpen(Boolean(settings?.registration_open ?? true));
+    };
+
+    void loadSettings();
+
+    const unsubscribe = subscribeToSystemSettings((settings) => {
+      if (isMounted) {
+        setRegistrationOpen(Boolean(settings.registration_open));
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+
   const toggleDarkMode = () => {
     document.documentElement.classList.toggle("dark");
     setIsDarkMode((current) => !current);
   };
 
-  const submitTarget = () => {
+  const submitTarget = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
     if (view === "login") {
+      const formData = new FormData(event.currentTarget);
+      const identifier = String(formData.get("auth_identifier") ?? "").trim();
+      try {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("appUserRole", role);
+          if (identifier) localStorage.setItem("appUserPhone", identifier);
+        }
+      } catch (e) {
+        // ignore
+      }
+
       if (role === "student") router.push("/student/dashboard");
       if (role === "parent") router.push("/parent/dashboard");
       if (role === "teacher") router.push("/teacher/dashboard");
       return;
     }
 
-    if (role === "student") router.push("/student/dashboard");
-    if (role === "parent") router.push("/parent/dashboard");
-    if (role === "teacher") router.push("/teacher/dashboard");
-  };
+    const formData = new FormData(event.currentTarget);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    submitTarget();
+    if (view === "signup" && !registrationOpen) {
+      return;
+    }
+
+    if (role === "student") {
+      await saveUser({
+        name: String(formData.get("student_name") ?? "").trim(),
+        phone: String(formData.get("student_phone") ?? "").trim(),
+        role: "student",
+        stage: studentStage,
+        grade: studentGrade,
+        track: studentTrack,
+        parent_phone: String(formData.get("parent_phone") ?? "").trim() || undefined,
+      });
+      try {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('appUserRole', 'student');
+          localStorage.setItem('appUserPhone', String(formData.get('student_phone') ?? '').trim());
+        }
+      } catch (e) {}
+      router.push("/student/dashboard");
+      return;
+    }
+
+    if (role === "parent") {
+      await saveUser({
+        name: String(formData.get("parent_name") ?? "").trim(),
+        phone: String(formData.get("parent_phone") ?? "").trim(),
+        role: "parent",
+        student_code: String(formData.get("parent_link_code") ?? "").trim() || undefined,
+        extra: {
+          child_name: String(formData.get("parent_child_name") ?? "").trim(),
+        },
+      });
+      try {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('appUserRole', 'parent');
+          localStorage.setItem('appUserPhone', String(formData.get('parent_phone') ?? '').trim());
+        }
+      } catch (e) {}
+      router.push("/parent/dashboard");
+      return;
+    }
+
+    await saveUser({
+      name: String(formData.get("teacher_name") ?? "").trim(),
+      phone: String(formData.get("teacher_phone") ?? "").trim(),
+      role: "teacher",
+      stage: teacherStage,
+      school_name: String(formData.get("teacher_school") ?? "").trim() || undefined,
+      subjects: String(formData.get("teacher_subjects") ?? "")
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean),
+      extra: {
+        photo_name: String(formData.get("teacher_photo") ?? "").trim() || undefined,
+      },
+    });
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('appUserRole', 'teacher');
+        localStorage.setItem('appUserPhone', String(formData.get('teacher_phone') ?? '').trim());
+      }
+    } catch (e) {}
+    router.push("/teacher/dashboard");
   };
 
   if (showSplash) {
@@ -222,7 +320,7 @@ export default function AuthPage() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.3 }}
-              onSubmit={handleSubmit}
+              onSubmit={submitTarget}
               className="space-y-5"
             >
               {view === "signup" && role === "student" ? (
@@ -231,6 +329,7 @@ export default function AuthPage() {
                     الاسم الرباعي
                     <input
                       type="text"
+                      name="student_name"
                       placeholder="أدخل اسمك الكامل"
                       className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 font-medium text-[#0A2540] outline-none transition-all placeholder:text-slate-400 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] dark:border-white/10 dark:bg-black/20 dark:text-white dark:placeholder:text-white/30"
                     />
@@ -239,6 +338,7 @@ export default function AuthPage() {
                   <label className="block text-sm font-bold text-[#0A2540]/80 dark:text-white/80">
                     المرحلة الدراسية
                     <select
+                      name="student_stage"
                       value={studentStage}
                       onChange={(event) => {
                         const nextStage = event.target.value as StudentStage;
@@ -259,6 +359,7 @@ export default function AuthPage() {
                     <label className="block text-sm font-bold text-[#0A2540]/80 dark:text-white/80">
                       الصف الدراسي
                       <select
+                        name="student_grade"
                         value={studentGrade}
                         onChange={(event) => setStudentGrade(event.target.value)}
                         className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 font-medium text-[#0A2540] outline-none transition-all focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20 dark:text-white"
@@ -277,6 +378,7 @@ export default function AuthPage() {
                     <label className="block text-sm font-bold text-[#0A2540]/80 dark:text-white/80">
                       الشعبة
                       <select
+                        name="student_track"
                         value={studentTrack}
                         onChange={(event) => setStudentTrack(event.target.value as SecondaryTrack)}
                         className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 font-medium text-[#0A2540] outline-none transition-all focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20 dark:text-white"
@@ -299,6 +401,7 @@ export default function AuthPage() {
                       </div>
                       <input
                         type={showPassword ? "text" : "password"}
+                        name="student_password"
                         placeholder="••••••••"
                         className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 pr-11 pl-11 font-medium text-[#0A2540] outline-none transition-all placeholder:text-slate-400 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] dark:border-white/10 dark:bg-black/20 dark:text-white dark:placeholder:text-white/30"
                       />
@@ -320,6 +423,7 @@ export default function AuthPage() {
                     اسم ولي الأمر
                     <input
                       type="text"
+                      name="parent_name"
                       placeholder="الاسم الكامل"
                       className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 font-medium text-[#0A2540] outline-none transition-all placeholder:text-slate-400 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] dark:border-white/10 dark:bg-black/20 dark:text-white dark:placeholder:text-white/30"
                     />
@@ -329,6 +433,7 @@ export default function AuthPage() {
                     رقم الهاتف
                     <input
                       type="tel"
+                      name="parent_phone"
                       placeholder="01X XXXX XXXX"
                       className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 font-medium text-[#0A2540] outline-none transition-all placeholder:text-slate-400 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] dark:border-white/10 dark:bg-black/20 dark:text-white dark:placeholder:text-white/30"
                     />
@@ -338,6 +443,7 @@ export default function AuthPage() {
                     كود الطالب للربط
                     <input
                       type="text"
+                      name="parent_link_code"
                       placeholder="مثال: VIS-12345"
                       className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 font-mono font-medium text-[#0A2540] outline-none transition-all placeholder:text-slate-400 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] dark:border-white/10 dark:bg-black/20 dark:text-white dark:placeholder:text-white/30"
                     />
@@ -351,6 +457,7 @@ export default function AuthPage() {
                       </div>
                       <input
                         type={showPassword ? "text" : "password"}
+                        name="parent_password"
                         placeholder="••••••••"
                         className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 pr-11 pl-11 font-medium text-[#0A2540] outline-none transition-all placeholder:text-slate-400 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] dark:border-white/10 dark:bg-black/20 dark:text-white dark:placeholder:text-white/30"
                       />
@@ -460,6 +567,7 @@ export default function AuthPage() {
                       </div>
                       <input
                         type="text"
+                        name="auth_identifier"
                         placeholder="01X XXXX XXXX"
                         className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 pr-11 font-medium text-[#0A2540] outline-none transition-all placeholder:text-slate-400 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] dark:border-white/10 dark:bg-black/20 dark:text-white dark:placeholder:text-white/30"
                       />

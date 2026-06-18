@@ -17,6 +17,28 @@ const navItems: DashboardNavItem[] = [
 export default function TeacherDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<(typeof navItems)[number]['id']>('dashboard');
+  const [notifyStage, setNotifyStage] = useState('');
+  const [notifyGrade, setNotifyGrade] = useState('');
+  const [notifyTrack, setNotifyTrack] = useState('');
+
+  const stageGrades: Record<string, string[]> = {
+    primary: [
+      'الصف الأول الابتدائي',
+      'الصف الثاني الابتدائي',
+      'الصف الثالث الابتدائي',
+      'الصف الرابع الابتدائي',
+      'الصف الخامس الابتدائي',
+      'الصف السادس الابتدائي',
+    ],
+    prep: ['الصف الأول الإعدادي', 'الصف الثاني الإعدادي', 'الصف الثالث الإعدادي'],
+    secondary: ['الصف الأول الثانوي ', 'الصف الثاني الثانوي ', 'الصف الثالث الثانوي '],
+  };
+
+  const secondaryTracks = [
+    { value: 'arts', label: 'أدبي' },
+    { value: 'science', label: 'علمي علوم' },
+    { value: 'math', label: 'علمي رياضة' },
+  ];
 
   const notificationsPanel = (
     <div className="border-b border-slate-100 bg-slate-50/80 p-4 dark:border-white/5 dark:bg-black/20">
@@ -26,10 +48,66 @@ export default function TeacherDashboard() {
           0 جديد
         </span>
       </div>
+
+      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div>
+          <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-300">المرحلة</label>
+          <select
+            value={notifyStage}
+            onChange={(e) => {
+              setNotifyStage(e.target.value);
+              setNotifyGrade('');
+              setNotifyTrack('');
+            }}
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 outline-none transition-all dark:border-slate-700 dark:bg-slate-900"
+          >
+            <option value="">كل المراحل</option>
+            <option value="primary">ابتدائي</option>
+            <option value="prep">إعدادي</option>
+            <option value="secondary">ثانوي</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-300">الصف</label>
+          <select
+            value={notifyGrade}
+            onChange={(e) => setNotifyGrade(e.target.value)}
+            disabled={!notifyStage}
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 outline-none transition-all disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900"
+          >
+            <option value="">كل الصفوف</option>
+            {notifyStage &&
+              stageGrades[notifyStage as keyof typeof stageGrades].map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
+              ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-300">الشعبة</label>
+          <select
+            value={notifyTrack}
+            onChange={(e) => setNotifyTrack(e.target.value)}
+            disabled={!(notifyStage === 'secondary' && (notifyGrade === 'الصف الثاني الثانوي ' || notifyGrade === 'الصف الثالث الثانوي '))}
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 outline-none transition-all disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900"
+          >
+            <option value="">كل الشعب</option>
+            {secondaryTracks.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       <EmptyState
         icon={Bell}
         title="لا توجد إشعارات حالياً"
-        description="ستظهر تنبيهات الحضور، الامتحانات، والرسائل هنا بمجرد ربط الـ API."
+        description="ستظهر تنبيهات الحضور، الامتحانات، والرسائل هنا بمجرد ربط الـ API. اختر المرحلة والصف لتصفية الإشعارات."
       />
     </div>
   );

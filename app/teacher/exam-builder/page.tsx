@@ -6,6 +6,7 @@ import {
   BookOpen,
   CheckCircle2,
   Clock,
+  ChevronLeft,
   Plus,
   Save,
   Settings,
@@ -38,6 +39,7 @@ export default function ExamBuilderPage() {
   const [shuffleQuestions, setShuffleQuestions] = useState(false);
   const [publishedAt, setPublishedAt] = useState('');
   const [endsAt, setEndsAt] = useState('');
+  const [pricingMode, setPricingMode] = useState<'free' | 'paid'>('free');
   const hasCelebratedRef = useRef(false);
 
   useEffect(() => {
@@ -104,6 +106,14 @@ export default function ExamBuilderPage() {
           <div className="flex gap-3">
             <button
               type="button"
+              onClick={() => window.history.back()}
+              className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 font-bold text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+            >
+              <ChevronLeft className="h-5 w-5 rtl:rotate-180" />
+              رجوع
+            </button>
+            <button
+              type="button"
               onClick={() => setIsBankOpen(true)}
               className="flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-2.5 font-bold text-slate-700 transition-colors hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
             >
@@ -140,6 +150,36 @@ export default function ExamBuilderPage() {
                   placeholder="سيتم ملؤه من البيانات الحقيقية لاحقاً"
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none transition-all focus:border-vision-gold focus:ring-1 focus:ring-vision-gold dark:border-slate-700 dark:bg-slate-900"
                 />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">
+                  نوع الامتحان
+                </label>
+                <div className="grid grid-cols-2 gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2 dark:border-slate-700 dark:bg-slate-900">
+                  <button
+                    type="button"
+                    onClick={() => setPricingMode('free')}
+                    className={`rounded-lg px-3 py-2 text-sm font-bold transition-colors ${
+                      pricingMode === 'free'
+                        ? 'bg-vision-navy text-white dark:bg-vision-gold dark:text-vision-navy'
+                        : 'text-slate-500 dark:text-slate-300'
+                    }`}
+                  >
+                    مجاني
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPricingMode('paid')}
+                    className={`rounded-lg px-3 py-2 text-sm font-bold transition-colors ${
+                      pricingMode === 'paid'
+                        ? 'bg-vision-navy text-white dark:bg-vision-gold dark:text-vision-navy'
+                        : 'text-slate-500 dark:text-slate-300'
+                    }`}
+                  >
+                    مدفوع
+                  </button>
+                </div>
               </div>
 
               <div>
@@ -197,6 +237,18 @@ export default function ExamBuilderPage() {
                   <Clock className="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                 </div>
               </div>
+
+              {pricingMode === 'paid' ? (
+                <div className="rounded-2xl border border-dashed border-vision-gold/40 bg-vision-gold/5 p-4">
+                  <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                    الامتحان مدفوع، وسيظهر لاحقاً كعنصر قابل للشراء من المحفظة.
+                  </p>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-emerald-200 bg-emerald-50 p-4">
+                  <p className="text-sm font-bold text-emerald-700">الامتحان مجاني، وسيتاح مباشرة للطلاب المستهدفين.</p>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 dark:border-slate-700">
                 <div>

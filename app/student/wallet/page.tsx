@@ -4,14 +4,22 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Wallet, CircleDashed } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
-import { fetchSystemSettings } from '@/lib/supabase/system-settings';
+import { fetchSystemSettings, subscribeToSystemSettings } from '@/lib/supabase/system-settings';
 
 export default function StudentWalletPage() {
   const router = useRouter();
   const [walletEnabled, setWalletEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const role = localStorage.getItem('appUserRole');
+        setUserRole(role);
+      }
+    } catch (e) {}
+
     let isMounted = true;
 
     const loadSettings = async () => {
@@ -30,10 +38,33 @@ export default function StudentWalletPage() {
 
     void loadSettings();
 
+    const unsubscribe = subscribeToSystemSettings((settings) => {
+      if (isMounted) {
+        setWalletEnabled(Boolean(settings.wallet_enabled));
+      }
+    });
+
     return () => {
       isMounted = false;
+      if (unsubscribe) unsubscribe();
     };
   }, []);
+
+  if (userRole && userRole !== 'student') {
+    return (
+      <div className="min-h-screen bg-slate-50 p-4 font-cairo dark:bg-slate-950 sm:p-6">
+        <div className="mx-auto max-w-4xl">
+          <EmptyState
+            icon={CircleDashed}
+            title="هذه الصفحة مخصصة للطلاب فقط"
+            description="ليس لديك صلاحية لعرض المحفظة. سجّل الدخول كطالب للوصول إلى هذه الصفحة."
+            actionLabel="العودة للصفحة الرئيسية"
+            onAction={() => router.push('/')}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 font-cairo dark:bg-slate-950 sm:p-6">
