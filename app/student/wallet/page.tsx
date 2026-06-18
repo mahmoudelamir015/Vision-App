@@ -1,11 +1,39 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Wallet, CircleDashed } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
+import { fetchSystemSettings } from '@/lib/supabase/system-settings';
 
 export default function StudentWalletPage() {
   const router = useRouter();
+  const [walletEnabled, setWalletEnabled] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadSettings = async () => {
+      try {
+        const settings = await fetchSystemSettings();
+
+        if (!isMounted) return;
+
+        setWalletEnabled(Boolean(settings?.wallet_enabled));
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadSettings();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 font-cairo dark:bg-slate-950 sm:p-6">
@@ -18,19 +46,33 @@ export default function StudentWalletPage() {
             <div>
               <h1 className="text-2xl font-extrabold text-[#0A2540] dark:text-white">محفظتي</h1>
               <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">
-                الصفحة جاهزة للربط بـ Supabase، ولا توجد بيانات مالية حالياً.
+                {isLoading
+                  ? 'جارٍ التحقق من حالة المحفظة من Supabase...'
+                  : walletEnabled
+                    ? 'المحفظة متاحة حالياً، والبيانات الفعلية ستظهر هنا بعد الربط.'
+                    : 'المحفظة مخفية حالياً من غرفة العمليات.'}
               </p>
             </div>
           </div>
         </header>
 
-        <EmptyState
-          icon={CircleDashed}
-          title="لا توجد بيانات مالية حالياً"
-          description="بعد الربط بالـ API هتظهر هنا الرصيد، الشحن، وسجل العمليات بشكل مباشر بدون أي بيانات وهمية."
-          actionLabel="العودة للوحة الطالب"
-          onAction={() => router.push('/student/dashboard')}
-        />
+        {walletEnabled ? (
+          <EmptyState
+            icon={CircleDashed}
+            title="لا توجد بيانات مالية حالياً"
+            description="بعد الربط بالـ API ستظهر هنا أرصدة الطالب، سجل الشحن، والعمليات المالية مباشرة."
+            actionLabel="العودة للوحة الطالب"
+            onAction={() => router.push('/student/dashboard')}
+          />
+        ) : (
+          <EmptyState
+            icon={CircleDashed}
+            title="المحفظة غير متاحة حالياً"
+            description="المدير قفل المحفظة من system_settings، لذلك الواجهة مخفية إلى أن يتم تفعيلها من غرفة العمليات."
+            actionLabel="العودة للوحة الطالب"
+            onAction={() => router.push('/student/dashboard')}
+          />
+        )}
       </div>
     </div>
   );

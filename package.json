@@ -10,6 +10,7 @@
     "clean": "next clean"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.108.2",
     "autoprefixer": "^10.4.21",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
