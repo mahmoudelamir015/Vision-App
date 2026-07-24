@@ -16,6 +16,11 @@ export const supabaseTableNames = {
   wallets: "wallets",
   attendance: "attendance",
   profiles: "profiles",
+  exams: "exams",
+  examQuestions: "exam_questions",
+  questionBank: "question_bank",
+  notifications: "notifications",
+  examAttempts: "exam_attempts",
 } as const;
 
 export type SupabaseRecord = Record<string, unknown>;

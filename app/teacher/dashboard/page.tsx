@@ -1,37 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Bell, BookOpen, FileEdit, LayoutDashboard, PieChart, Users } from 'lucide-react';
 import { DashboardShell, type DashboardNavItem } from '@/components/dashboard/dashboard-shell';
 import { EmptyState } from '@/components/ui/empty-state';
+import { fetchNotifications, type NotificationRecord } from '@/lib/supabase/notifications';
 
 const navItems: DashboardNavItem[] = [
   { id: 'dashboard', label: 'الرئيسية', icon: LayoutDashboard },
-  { id: 'groups', label: 'مجموعاتي', icon: Users },
-  { id: 'exam-builder', label: 'إنشاء امتحان', icon: FileEdit },
-  { id: 'content', label: 'المذكرات والمحتوى', icon: BookOpen },
-  { id: 'reports', label: 'التقارير والإحصائيات', icon: PieChart },
-] as const;
+  { id: 'groups', label: 'الصفوف', icon: Users },
+  { id: 'exam-builder', label: 'بناء الامتحان', icon: FileEdit },
+  { id: 'content', label: 'المحتوى التعليمي', icon: BookOpen },
+  { id: 'reports', label: 'التقارير', icon: PieChart },
+];
 
 export default function TeacherDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<(typeof navItems)[number]['id']>('dashboard');
+  const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
   const [notifyStage, setNotifyStage] = useState('');
   const [notifyGrade, setNotifyGrade] = useState('');
   const [notifyTrack, setNotifyTrack] = useState('');
 
   const stageGrades: Record<string, string[]> = {
-    primary: [
-      'الصف الأول الابتدائي',
-      'الصف الثاني الابتدائي',
-      'الصف الثالث الابتدائي',
-      'الصف الرابع الابتدائي',
-      'الصف الخامس الابتدائي',
-      'الصف السادس الابتدائي',
-    ],
-    prep: ['الصف الأول الإعدادي', 'الصف الثاني الإعدادي', 'الصف الثالث الإعدادي'],
-    secondary: ['الصف الأول الثانوي ', 'الصف الثاني الثانوي ', 'الصف الثالث الثانوي '],
+    primary: ['الصف الأول', 'الصف الثاني', 'الصف الثالث', 'الصف الرابع', 'الصف الخامس', 'الصف السادس'],
+    prep: ['الأول الإعدادي', 'الثاني الإعدادي', 'الثالث الإعدادي'],
+    secondary: ['الأول الثانوي', 'الثاني الثانوي', 'الثالث الثانوي'],
   };
 
   const secondaryTracks = [
@@ -40,12 +35,29 @@ export default function TeacherDashboard() {
     { value: 'math', label: 'علمي رياضة' },
   ];
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadNotifications = async () => {
+      const rows = await fetchNotifications();
+      if (isMounted) {
+        setNotifications(rows);
+      }
+    };
+
+    void loadNotifications();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const notificationsPanel = (
     <div className="border-b border-slate-100 bg-slate-50/80 p-4 dark:border-white/5 dark:bg-black/20">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-bold text-[#0A2540] dark:text-white">الإشعارات</h3>
         <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-white/10 dark:text-slate-300">
-          0 جديد
+          {notifications.length} جديدة
         </span>
       </div>
 
@@ -61,7 +73,7 @@ export default function TeacherDashboard() {
             }}
             className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 outline-none transition-all dark:border-slate-700 dark:bg-slate-900"
           >
-            <option value="">كل المراحل</option>
+            <option value="">اختر المرحلة</option>
             <option value="primary">ابتدائي</option>
             <option value="prep">إعدادي</option>
             <option value="secondary">ثانوي</option>
@@ -76,39 +88,55 @@ export default function TeacherDashboard() {
             disabled={!notifyStage}
             className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 outline-none transition-all disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900"
           >
-            <option value="">كل الصفوف</option>
+            <option value="">اختر الصف</option>
             {notifyStage &&
-              stageGrades[notifyStage as keyof typeof stageGrades].map((g) => (
-                <option key={g} value={g}>
-                  {g}
+              stageGrades[notifyStage as keyof typeof stageGrades].map((grade) => (
+                <option key={grade} value={grade}>
+                  {grade}
                 </option>
               ))}
           </select>
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-300">الشعبة</label>
+          <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-300">القسم</label>
           <select
             value={notifyTrack}
             onChange={(e) => setNotifyTrack(e.target.value)}
-            disabled={!(notifyStage === 'secondary' && (notifyGrade === 'الصف الثاني الثانوي ' || notifyGrade === 'الصف الثالث الثانوي '))}
+            disabled={!(notifyStage === 'secondary' && (notifyGrade === 'الثاني الثانوي' || notifyGrade === 'الثالث الثانوي'))}
             className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 outline-none transition-all disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900"
           >
-            <option value="">كل الشعب</option>
-            {secondaryTracks.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
+            <option value="">اختر القسم</option>
+            {secondaryTracks.map((track) => (
+              <option key={track.value} value={track.value}>
+                {track.label}
               </option>
             ))}
           </select>
         </div>
       </div>
 
-      <EmptyState
-        icon={Bell}
-        title="لا توجد إشعارات حالياً"
-        description="ستظهر تنبيهات الحضور، الامتحانات، والرسائل هنا بمجرد ربط الـ API. اختر المرحلة والصف لتصفية الإشعارات."
-      />
+      {notifications.length > 0 ? (
+        <div className="space-y-3">
+          {notifications.slice(0, 3).map((notification) => (
+            <div key={notification.id ?? notification.title} className="rounded-2xl bg-white p-4 shadow-sm dark:bg-slate-900">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h4 className="text-sm font-extrabold text-[#0A2540] dark:text-white">{notification.title}</h4>
+                  <p className="mt-1 text-xs font-medium leading-5 text-slate-500 dark:text-slate-400">{notification.body}</p>
+                </div>
+                <Bell className="h-4 w-4 shrink-0 text-[#D4AF37]" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <EmptyState
+          icon={Bell}
+          title="لا توجد إشعارات جديدة"
+          description="أي تحديث من الإدارة أو من لوحة الطالب سيظهر هنا بعد تفعيل الربط الكامل."
+        />
+      )}
     </div>
   );
 
@@ -118,12 +146,8 @@ export default function TeacherDashboard() {
         M
       </div>
       <div className="flex flex-col pl-4">
-        <span className="text-sm font-extrabold leading-tight text-[#0A2540] dark:text-[#D4AF37]">
-          مساحة المعلم
-        </span>
-        <span className="mt-0.5 text-[10px] font-bold text-slate-500 dark:text-slate-400">
-          لا توجد بيانات بعد
-        </span>
+        <span className="text-sm font-extrabold leading-tight text-[#0A2540] dark:text-[#D4AF37]">المعلم</span>
+        <span className="mt-0.5 text-[10px] font-bold text-slate-500 dark:text-slate-400">لوحة المعلم</span>
       </div>
     </>
   );
@@ -134,17 +158,17 @@ export default function TeacherDashboard() {
         return (
           <EmptyState
             icon={Users}
-            title="لا توجد مجموعات حالياً"
-            description="بعد ربط قاعدة البيانات ستظهر هنا مجموعاتك، الطلاب، والإحصائيات الخاصة بكل مجموعة."
+            title="لا توجد صفوف مرتبطة حالياً"
+            description="الصفوف والطلاب المرتبطين هيتم سحبهم من قاعدة البيانات بعد اكتمال الربط."
           />
         );
       case 'exam-builder':
         return (
           <EmptyState
             icon={FileEdit}
-            title="محرر الامتحانات جاهز"
-            description="لن يتم عرض أي بيانات وهمية هنا. يمكنك فتح صفحة إنشاء الامتحان لإضافة أول محتوى فعلي لاحقاً."
-            actionLabel="فتح صفحة إنشاء الامتحان"
+            title="افتح صفحة بناء الامتحان"
+            description="من هنا تقدر تنشئ امتحان جديد وتنتقل لشاشة البناء الكاملة."
+            actionLabel="فتح الباني"
             onAction={() => router.push('/teacher/exam-builder')}
           />
         );
@@ -152,8 +176,8 @@ export default function TeacherDashboard() {
         return (
           <EmptyState
             icon={BookOpen}
-            title="لا يوجد محتوى منشور"
-            description="ستظهر المذكرات، الفيديوهات، والملفات التعليمية هنا بعد وصولها من الـ backend."
+            title="لا يوجد محتوى تعليمي منشور"
+            description="سجلات المحتوى والدروس ستظهر هنا بعد الربط مع الـ backend."
           />
         );
       case 'reports':
@@ -161,7 +185,7 @@ export default function TeacherDashboard() {
           <EmptyState
             icon={PieChart}
             title="لا توجد تقارير بعد"
-            description="عند توفر البيانات الحقيقية ستظهر الرسوم البيانية والإحصائيات التفصيلية هنا."
+            description="التقارير والإحصائيات ستظهر هنا عند تفعيل البيانات الفعلية."
           />
         );
       case 'dashboard':
@@ -169,9 +193,9 @@ export default function TeacherDashboard() {
         return (
           <EmptyState
             icon={LayoutDashboard}
-            title="لوحة المعلم جاهزة للبيانات"
-            description="تم تنظيف الواجهة من أي بيانات hardcoded، واللوحة الآن مستعدة لاستقبال البيانات الحقيقية من الـ API."
-            actionLabel="ابدأ من إنشاء امتحان"
+            title="لوحة المعلم الرئيسية"
+            description="من هنا هيظهر كل ما يخص الصفوف والامتحانات والإشعارات بعد اكتمال الربط."
+            actionLabel="اذهب إلى بناء الامتحان"
             onAction={() => setActiveTab('exam-builder')}
           />
         );

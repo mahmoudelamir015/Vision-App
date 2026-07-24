@@ -18,7 +18,7 @@ export default function StudentProfilePage() {
             <div>
               <h1 className="text-2xl font-extrabold text-[#0A2540] dark:text-white">الملف الشخصي</h1>
               <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">
-                البيانات الشخصية هتيجي من الـ backend بعد الربط.
+                بيانات الطالب هتتسحب من قاعدة البيانات وتظهر هنا بعد الربط الكامل.
               </p>
             </div>
           </div>
@@ -26,9 +26,9 @@ export default function StudentProfilePage() {
 
         <EmptyState
           icon={CircleDashed}
-          title="لا يوجد ملف شخصي متزامن حالياً"
-          description="هنعرض الاسم، الصورة، المرحلة، الكود، ووسائل التواصل تلقائياً بعد تجهيز Supabase."
-          actionLabel="العودة للوحة الطالب"
+          title="لا توجد بيانات شخصية حالياً"
+          description="الاسم، المرحلة، الصف، والحالة الدراسية هتظهر هنا بعد مزامنة البيانات مع Supabase."
+          actionLabel="العودة إلى لوحة الطالب"
           onAction={() => router.push('/student/dashboard')}
         />
       </div>

@@ -1,60 +1,67 @@
-import { getSupabaseClient } from "./index";
+import { normalizeEgyptianPhone } from "../auth/phone";
+import { fetchUserByPhone, saveUser, type AppUserRecord } from "./users";
 
-const normalizePhoneCandidate = (phone: string) => {
-  const trimmed = phone.trim().replace(/\s+/g, "");
-  const compact = trimmed.replace(/[^\d+]/g, "");
-  if (!compact) return null;
-  if (compact.startsWith("+")) return compact;
-  const digits = compact.replace(/\D/g, "");
-  if (!digits) return null;
-  if (digits.startsWith("0")) return `+20${digits.replace(/^0/, "")}`;
-  if (digits.startsWith("20")) return `+${digits}`;
-  return `+20${digits}`;
+const readResetMeta = (user: AppUserRecord | null) => {
+  const extra = user?.extra && typeof user.extra === "object" ? user.extra : {};
+  const passwordReset = extra && typeof extra === "object" ? (extra as Record<string, unknown>).password_reset : null;
+  return passwordReset && typeof passwordReset === "object" ? (passwordReset as Record<string, unknown>) : null;
 };
 
-export async function sendUserSignupOtp(phone: string) {
-  const client = getSupabaseClient();
-  if (!client) throw new Error("Supabase غير مضبوط");
-  const normalized = normalizePhoneCandidate(phone);
+export async function requestPasswordReset(phone: string) {
+  const normalized = normalizeEgyptianPhone(phone);
   if (!normalized) throw new Error("رقم موبايل غير صالح");
 
-  return client.auth.signInWithOtp({
-    phone: normalized,
-    options: { shouldCreateUser: true },
-  });
+  const user = await fetchUserByPhone(normalized);
+  if (!user) return null;
+
+  const requestedAt = new Date().toISOString();
+  const nextUser: AppUserRecord = {
+    ...user,
+    extra: {
+      ...(user.extra ?? {}),
+      password_reset: {
+        status: "pending",
+        requested_at: requestedAt,
+        approved_until: null,
+      },
+    },
+  };
+
+  return saveUser(nextUser);
 }
 
-export async function verifyUserOtp(phone: string, token: string) {
-  const client = getSupabaseClient();
-  if (!client) throw new Error("Supabase غير مضبوط");
-  const normalized = normalizePhoneCandidate(phone);
+export async function approvePasswordReset(phone: string) {
+  const normalized = normalizeEgyptianPhone(phone);
   if (!normalized) throw new Error("رقم موبايل غير صالح");
 
-  return client.auth.verifyOtp({ phone: normalized, token, type: "sms" });
+  const user = await fetchUserByPhone(normalized);
+  if (!user) return null;
+
+  const approvedUntil = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  const nextUser: AppUserRecord = {
+    ...user,
+    extra: {
+      ...(user.extra ?? {}),
+      password_reset: {
+        status: "approved",
+        requested_at: readResetMeta(user)?.requested_at ?? null,
+        approved_at: new Date().toISOString(),
+        approved_until: approvedUntil,
+      },
+    },
+  };
+
+  return saveUser(nextUser);
 }
 
-export async function sendPasswordResetOtp(phone: string) {
-  // reuse signInWithOtp to send SMS OTP for password reset
-  const client = getSupabaseClient();
-  if (!client) throw new Error("Supabase غير مضبوط");
-  const normalized = normalizePhoneCandidate(phone);
-  if (!normalized) throw new Error("رقم موبايل غير صالح");
+export async function canSetNewPassword(phone: string) {
+  const normalized = normalizeEgyptianPhone(phone);
+  if (!normalized) return false;
 
-  return client.auth.signInWithOtp({ phone: normalized, options: { shouldCreateUser: false } });
-}
+  const user = await fetchUserByPhone(normalized);
+  const meta = readResetMeta(user);
+  const approvedUntil = typeof meta?.approved_until === "string" ? meta.approved_until : null;
+  if (!approvedUntil) return false;
 
-export async function verifyOtpAndSetPassword(phone: string, token: string, newPassword: string) {
-  const client = getSupabaseClient();
-  if (!client) throw new Error("Supabase غير مضبوط");
-  const normalized = normalizePhoneCandidate(phone);
-  if (!normalized) throw new Error("رقم موبايل غير صالح");
-
-  // verify OTP (this should create a session)
-  const res = await client.auth.verifyOtp({ phone: normalized, token, type: "sms" });
-  if (res.error) throw res.error;
-
-  // update password for the signed-in user
-  const { data, error } = await client.auth.updateUser({ password: newPassword });
-  if (error) throw error;
-  return data;
+  return new Date(approvedUntil).getTime() > Date.now();
 }

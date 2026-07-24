@@ -1,23 +1,25 @@
-'use client';
+import { redirect } from "next/navigation";
+import { getCurrentAppProfile } from "@/lib/auth/session";
+import { ExamPlayerClient } from "./exam-player-client";
 
-import { useRouter } from 'next/navigation';
-import { FileText } from 'lucide-react';
-import { EmptyState } from '@/components/ui/empty-state';
+type ExamPlayerPageProps = {
+  searchParams?: Promise<{
+    examId?: string;
+  }>;
+};
 
-export default function ExamPlayerPage() {
-  const router = useRouter();
+export default async function ExamPlayerPage({ searchParams }: ExamPlayerPageProps) {
+  const profile = await getCurrentAppProfile();
 
-  return (
-    <div className="min-h-screen bg-slate-50 p-6 font-cairo dark:bg-slate-950">
-      <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-4xl items-center">
-        <EmptyState
-          icon={FileText}
-          title="لا توجد امتحانات حالياً"
-          description="تمت إزالة بيانات الاختبار التجريبية بالكامل. عند وصول الامتحانات من الـ backend ستظهر هنا تلقائياً مع كل أدوات الحل والمراجعة."
-          actionLabel="العودة للوحة الطالب"
-          onAction={() => router.push('/student/dashboard')}
-        />
-      </div>
-    </div>
-  );
+  if (!profile) {
+    redirect("/");
+  }
+
+  if (profile.role !== "student") {
+    redirect("/student/dashboard");
+  }
+
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+
+  return <ExamPlayerClient examId={resolvedSearchParams?.examId ?? ""} />;
 }

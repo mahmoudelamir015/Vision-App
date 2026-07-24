@@ -14,14 +14,16 @@ export default function PasswordResetRequest() {
     setLoading(true);
     setMsg(null);
     try {
-      // Dev flow: generate OTP and store locally (no SMS)
-      const code = Math.floor(100000 + Math.random() * 900000).toString();
-      localStorage.setItem(`dev_reset_otp_${phone}`, code);
-      console.log("DEV RESET OTP for", phone, "=", code);
-      setMsg("رمز استرجاع الباسورد اتبعت (شوف Console للرمز في التطوير)");
+      const response = await fetch("/api/auth/password-reset/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone }),
+      });
+      const result = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(result.error ?? "تعذر إرسال رمز التحقق");
       router.push(`/password-reset/verify?phone=${encodeURIComponent(phone)}`);
     } catch (err) {
-      setMsg((err as Error).message || "حدث خطأ");
+      setMsg(err instanceof Error ? err.message : "تعذر إرسال رمز التحقق");
     } finally {
       setLoading(false);
     }
@@ -29,16 +31,17 @@ export default function PasswordResetRequest() {
 
   return (
     <div className="mx-auto max-w-md p-6">
-      <h1 className="text-2xl font-bold">استرجاع كلمة المرور</h1>
+      <h1 className="text-2xl font-bold">استعادة كلمة المرور</h1>
+      <p className="mt-2 text-sm text-slate-600">هنبعت رمز تحقق للهاتف المسجل بالحساب.</p>
       <form className="mt-4 space-y-3" onSubmit={submit}>
-        <div>
-          <label className="text-sm font-bold">رقم الموبايل</label>
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full rounded-md border px-3 py-2" />
-        </div>
-        <div>
-          <button disabled={loading} className="rounded-md bg-[#0A2540] px-4 py-2 text-white">{loading ? "جاري..." : "أرسل كود"}</button>
-        </div>
-        {msg ? <div className="text-sm text-green-600">{msg}</div> : null}
+        <label className="block text-sm font-bold">
+          رقم الهاتف
+          <input value={phone} onChange={(e) => setPhone(e.target.value)} className="mt-1 w-full rounded-md border px-3 py-2" />
+        </label>
+        <button disabled={loading} className="rounded-md bg-[#0A2540] px-4 py-2 text-white">
+          {loading ? "جارٍ الإرسال..." : "إرسال الرمز"}
+        </button>
+        {msg ? <div className="text-sm text-red-600">{msg}</div> : null}
       </form>
     </div>
   );

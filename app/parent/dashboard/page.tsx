@@ -7,10 +7,10 @@ import { DashboardShell, type DashboardNavItem } from '@/components/dashboard/da
 import { EmptyState } from '@/components/ui/empty-state';
 
 const navItems: DashboardNavItem[] = [
-  { id: 'dashboard', label: 'لوحة التحكم', icon: LayoutDashboard },
-  { id: 'attendance', label: 'تقارير الحضور', icon: Calendar },
-  { id: 'finance', label: 'الماليات والرسوم', icon: CreditCard },
-  { id: 'messages', label: 'التواصل مع الإدارة', icon: MessageCircle },
+  { id: 'dashboard', label: 'الرئيسية', icon: LayoutDashboard },
+  { id: 'attendance', label: 'الحضور', icon: Calendar },
+  { id: 'finance', label: 'المالية', icon: CreditCard },
+  { id: 'messages', label: 'رسائل المدرسة', icon: MessageCircle },
 ];
 
 export default function ParentDashboard() {
@@ -22,13 +22,13 @@ export default function ParentDashboard() {
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-bold text-[#0A2540] dark:text-white">الإشعارات</h3>
         <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-white/10 dark:text-slate-300">
-          0 جديد
+          0 جديدة
         </span>
       </div>
       <EmptyState
         icon={Bell}
         title="لا توجد إشعارات حالياً"
-        description="ستظهر هنا التنبيهات الخاصة بالحضور، الرسوم، والرسائل بمجرد توصيل البيانات الفعلية."
+        description="إشعارات الحضور والدرجات والرسائل ستظهر هنا بعد ربط بيانات ولي الأمر الحقيقية."
       />
     </div>
   );
@@ -39,12 +39,8 @@ export default function ParentDashboard() {
         P
       </div>
       <div className="flex flex-col pl-4">
-        <span className="text-sm font-extrabold leading-tight text-[#0A2540] dark:text-[#D4AF37]">
-          مساحة ولي الأمر
-        </span>
-        <span className="mt-0.5 text-[10px] font-bold text-slate-500 dark:text-slate-400">
-          لا توجد بيانات بعد
-        </span>
+        <span className="text-sm font-extrabold leading-tight text-[#0A2540] dark:text-[#D4AF37]">ولي الأمر</span>
+        <span className="mt-0.5 text-[10px] font-bold text-slate-500 dark:text-slate-400">لوحة ولي الأمر</span>
       </div>
     </>
   );
@@ -55,24 +51,24 @@ export default function ParentDashboard() {
         return (
           <EmptyState
             icon={Calendar}
-            title="لا توجد تقارير حضور حالياً"
-            description="سيظهر هنا سجل الحضور والغياب بعد ربط الواجهة بقاعدة البيانات."
+            title="الحضور والغياب"
+            description="هنا ستظهر حالة الحضور اللحظية للطلاب المرتبطين بحساب ولي الأمر."
           />
         );
       case 'finance':
         return (
           <EmptyState
             icon={CreditCard}
-            title="لا توجد بيانات مالية بعد"
-            description="سيتم عرض الرسوم، الأقساط، وإيصالات الدفع هنا عندما يصبح الـ backend متاحاً."
+            title="البيانات المالية"
+            description="سجل المدفوعات والرصيد والفواتير سيظهر بعد الربط الفعلي بقاعدة البيانات."
           />
         );
       case 'messages':
         return (
           <EmptyState
             icon={MessageCircle}
-            title="لا توجد رسائل حالياً"
-            description="التواصل مع الإدارة والمعلمين سيظهر هنا بعد تفعيل نظام الرسائل."
+            title="رسائل المدرسة"
+            description="رسائل الإدارة والمعلمين ستظهر هنا بعد تفعيل المزامنة والـ Realtime."
           />
         );
       case 'dashboard':
@@ -80,9 +76,9 @@ export default function ParentDashboard() {
         return (
           <EmptyState
             icon={LayoutDashboard}
-            title="لوحة ولي الأمر جاهزة للبيانات"
-            description="تم حذف جميع البيانات الوهمية، والصفحة أصبحت جاهزة لاستقبال بيانات الأبناء من الـ API."
-            actionLabel="تحديث الصفحة عند توفر البيانات"
+            title="لوحة ولي الأمر"
+            description="هنا هتظهر بيانات الأبناء والحضور والدرجات بعد اكتمال الربط بقاعدة البيانات."
+            actionLabel="تحديث الصفحة"
             onAction={() => router.refresh()}
           />
         );

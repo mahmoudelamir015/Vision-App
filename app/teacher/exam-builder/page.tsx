@@ -1,22 +1,14 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import {
-  BookOpen,
-  CheckCircle2,
-  Clock,
-  ChevronLeft,
-  Plus,
-  Save,
-  Settings,
-  Shuffle,
-} from 'lucide-react';
+import { BookOpen, CheckCircle2, ChevronLeft, Clock, Plus, Save, Settings, Shuffle } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { QuestionBankModal } from '@/components/exam-builder/question-bank-modal';
 import { QuestionCard } from '@/components/exam-builder/question-card';
 import type { Question, QuestionType } from '@/components/exam-builder/types';
 import { triggerConfetti } from '@/lib/confetti';
+import { saveExamWithQuestions } from '@/lib/supabase/exams';
+import { fetchQuestionBank } from '@/lib/supabase/question-bank';
 
 const EMPTY_QUESTION_BANK: Question[] = [];
 
@@ -24,13 +16,14 @@ const createQuestion = (type: QuestionType): Question => ({
   id: `${type}-${Date.now()}-${Math.random()}`,
   type,
   text: '',
-  options: type === 'mcq' ? ['', '', '', ''] : ['صح', 'خطأ'],
+  options: type === 'mcq' ? ['', '', '', ''] : ['طµط­', 'ط®ط·ط£'],
   correctAnswer: 0,
   explanation: '',
 });
 
 export default function ExamBuilderPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [bankQuestions, setBankQuestions] = useState<Question[]>([]);
   const [isBankOpen, setIsBankOpen] = useState(false);
   const [examTitle, setExamTitle] = useState('');
   const [selectedStage, setSelectedStage] = useState('');
@@ -40,7 +33,36 @@ export default function ExamBuilderPage() {
   const [publishedAt, setPublishedAt] = useState('');
   const [endsAt, setEndsAt] = useState('');
   const [pricingMode, setPricingMode] = useState<'free' | 'paid'>('free');
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [saveMessage, setSaveMessage] = useState('');
   const hasCelebratedRef = useRef(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadQuestionBank = async () => {
+      const questionsFromBank = await fetchQuestionBank();
+      if (!isMounted) return;
+
+      setBankQuestions(
+        questionsFromBank.map((question) => ({
+          id: question.id ?? `${question.type}-${question.text.slice(0, 12)}`,
+          type: question.type,
+          text: question.text,
+          imageUrl: question.imageUrl,
+          options: question.options,
+          correctAnswer: question.correctAnswer,
+          explanation: question.explanation ?? '',
+        })),
+      );
+    };
+
+    void loadQuestionBank();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (questions.length === 0) {
@@ -91,16 +113,57 @@ export default function ExamBuilderPage() {
     setQuestions((current) => [...current, ...safeImports]);
   };
 
+  const handleSaveExam = async () => {
+    if (!examTitle.trim() || questions.length === 0) {
+      setSaveState('error');
+      setSaveMessage('اكتب عنوان الامتحان وأضف سؤال واحد على الأقل.');
+      return;
+    }
+
+    setSaveState('saving');
+    setSaveMessage('');
+
+    const savedExam = await saveExamWithQuestions({
+      exam: {
+        title: examTitle.trim(),
+        stage: selectedStage || undefined,
+        grade: selectedGrade || undefined,
+        track: undefined,
+        pricing_mode: pricingMode,
+        duration_minutes: Number(durationMinutes || 0),
+        shuffle_questions: shuffleQuestions,
+        published_at: publishedAt || undefined,
+        ends_at: endsAt || undefined,
+      },
+      questions: questions.map((question) => ({
+        title: question.text || 'سؤال',
+        type: question.type,
+        text: question.text,
+        imageUrl: question.imageUrl,
+        options: question.options,
+        correctAnswer: question.correctAnswer,
+        explanation: question.explanation,
+      })),
+    });
+
+    if (!savedExam) {
+      setSaveState('error');
+      setSaveMessage('فشل حفظ الامتحان. راجع صلاحيات قاعدة البيانات أو الـ RLS.');
+      return;
+    }
+
+    setSaveState('saved');
+    setSaveMessage(`تم حفظ الامتحان بنجاح بعنوان: ${savedExam.title}`);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 p-4 font-cairo dark:bg-slate-950 sm:p-8">
       <div className="mx-auto max-w-6xl space-y-6">
         <header className="flex flex-col items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800 sm:flex-row sm:items-center">
           <div>
-            <h1 className="text-2xl font-bold text-vision-navy dark:text-vision-gold">
-              نظام إنشاء الامتحانات
-            </h1>
+            <h1 className="text-2xl font-bold text-vision-navy dark:text-vision-gold">بناء الامتحان</h1>
             <p className="mt-1 text-slate-500 dark:text-slate-400">
-              الواجهة الآن نظيفة وجاهزة لربطها ببيانات الامتحانات الحقيقية من الـ API.
+              أنشئ الامتحان، اختار المرحلة والصف، وحدد مجاني أو مدفوع ثم احفظه في قاعدة البيانات.
             </p>
           </div>
           <div className="flex gap-3">
@@ -122,11 +185,12 @@ export default function ExamBuilderPage() {
             </button>
             <button
               type="button"
-              disabled
-              className="flex items-center gap-2 rounded-xl bg-vision-navy px-6 py-2.5 font-bold text-white opacity-60 shadow-lg dark:bg-vision-gold dark:text-vision-navy"
+              onClick={() => void handleSaveExam()}
+              disabled={saveState === 'saving' || questions.length === 0 || !examTitle.trim()}
+              className="flex items-center gap-2 rounded-xl bg-vision-navy px-6 py-2.5 font-bold text-white shadow-lg transition-opacity disabled:cursor-not-allowed disabled:opacity-60 dark:bg-vision-gold dark:text-vision-navy"
             >
               <Save className="h-5 w-5" />
-              الحفظ والنشر بعد الربط
+              {saveState === 'saving' ? 'جارٍ الحفظ...' : 'حفظ الامتحان'}
             </button>
           </div>
         </header>
@@ -140,22 +204,18 @@ export default function ExamBuilderPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">
-                  عنوان الامتحان
-                </label>
+                <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">عنوان الامتحان</label>
                 <input
                   type="text"
                   value={examTitle}
                   onChange={(event) => setExamTitle(event.target.value)}
-                  placeholder="سيتم ملؤه من البيانات الحقيقية لاحقاً"
+                  placeholder="اكتب اسم الامتحان هنا"
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none transition-all focus:border-vision-gold focus:ring-1 focus:ring-vision-gold dark:border-slate-700 dark:bg-slate-900"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">
-                  نوع الامتحان
-                </label>
+                <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">نظام الامتحان</label>
                 <div className="grid grid-cols-2 gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2 dark:border-slate-700 dark:bg-slate-900">
                   <button
                     type="button"
@@ -183,28 +243,30 @@ export default function ExamBuilderPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">
-                  المرحلة الدراسية
-                </label>
+                <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">المرحلة الدراسية</label>
                 <select
                   value={selectedStage}
                   onChange={(event) => setSelectedStage(event.target.value)}
                   className="w-full cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none transition-all focus:border-vision-gold focus:ring-1 focus:ring-vision-gold dark:border-slate-700 dark:bg-slate-900"
                 >
-                  <option value="">سيتم تحميل المراحل من الـ API</option>
+                  <option value="">اختر المرحلة</option>
+                  <option value="primary">ابتدائي</option>
+                  <option value="prep">إعدادي</option>
+                  <option value="secondary">ثانوي</option>
                 </select>
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">
-                  الصف الدراسي
-                </label>
+                <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">الصف الدراسي</label>
                 <select
                   value={selectedGrade}
                   onChange={(event) => setSelectedGrade(event.target.value)}
                   className="w-full cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none transition-all focus:border-vision-gold focus:ring-1 focus:ring-vision-gold dark:border-slate-700 dark:bg-slate-900"
                 >
-                  <option value="">سيظهر بعد اختيار المرحلة</option>
+                  <option value="">اختر الصف</option>
+                  <option value="1">الصف الأول</option>
+                  <option value="2">الصف الثاني</option>
+                  <option value="3">الصف الثالث</option>
                 </select>
               </div>
 
@@ -217,13 +279,13 @@ export default function ExamBuilderPage() {
                 />
                 <span className="flex select-none items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
                   <Shuffle className="h-4 w-4 text-slate-400" />
-                  عشوائية ترتيب الأسئلة
+                  خلط ترتيب الأسئلة
                 </span>
               </label>
 
               <div className="border-t border-slate-100 pt-4 dark:border-slate-700">
                 <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">
-                  مدة الامتحان (بالدقائق)
+                  المدة بالدقائق (اختياري)
                 </label>
                 <div className="relative">
                   <input
@@ -231,7 +293,7 @@ export default function ExamBuilderPage() {
                     min="0"
                     value={durationMinutes}
                     onChange={(event) => setDurationMinutes(event.target.value)}
-                    placeholder="سيتم تحديدها من الإعدادات الحقيقية"
+                    placeholder="اكتب مدة الامتحان"
                     className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pr-10 outline-none transition-all focus:border-vision-gold focus:ring-1 focus:ring-vision-gold dark:border-slate-700 dark:bg-slate-900"
                   />
                   <Clock className="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
@@ -241,20 +303,18 @@ export default function ExamBuilderPage() {
               {pricingMode === 'paid' ? (
                 <div className="rounded-2xl border border-dashed border-vision-gold/40 bg-vision-gold/5 p-4">
                   <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                    الامتحان مدفوع، وسيظهر لاحقاً كعنصر قابل للشراء من المحفظة.
+                    الامتحان مدفوع، وسيتطلب ربطه بآلية الدفع قبل النشر.
                   </p>
                 </div>
               ) : (
                 <div className="rounded-2xl border border-dashed border-emerald-200 bg-emerald-50 p-4">
-                  <p className="text-sm font-bold text-emerald-700">الامتحان مجاني، وسيتاح مباشرة للطلاب المستهدفين.</p>
+                  <p className="text-sm font-bold text-emerald-700">الامتحان مجاني وجاهز للنشر بعد الحفظ.</p>
                 </div>
               )}
 
               <div className="grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 dark:border-slate-700">
                 <div>
-                  <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-300">
-                    تاريخ الفتح
-                  </label>
+                  <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-300">تاريخ النشر</label>
                   <input
                     type="datetime-local"
                     value={publishedAt}
@@ -263,9 +323,7 @@ export default function ExamBuilderPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-300">
-                    تاريخ الإغلاق
-                  </label>
+                  <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-300">تاريخ الإغلاق</label>
                   <input
                     type="datetime-local"
                     value={endsAt}
@@ -278,37 +336,27 @@ export default function ExamBuilderPage() {
           </div>
 
           <div className="space-y-6 lg:col-span-2">
-            <AnimatePresence mode="popLayout">
-              {questions.length === 0 ? (
-                <EmptyState
-                  icon={BookOpen}
-                  title="لا توجد أسئلة بعد"
-                  description="الصفحة خالية من أي بيانات وهمية. أضف أول سؤال الآن أو افتح بنك الأسئلة عندما يصبح متاحاً من الـ API."
-                  actionLabel="إضافة أول سؤال"
-                  onAction={() => addQuestion('mcq')}
-                />
-              ) : null}
+            {questions.length === 0 ? (
+              <EmptyState
+                icon={BookOpen}
+                title="ابدأ بإضافة سؤال"
+                description="استخدم الأزرار التالية لإضافة سؤال اختيار من متعدد أو سؤال صح وخطأ."
+                actionLabel="إضافة سؤال"
+                onAction={() => addQuestion('mcq')}
+              />
+            ) : null}
 
-              {questions.map((question, index) => (
-                <motion.div
-                  key={question.id}
-                  layout
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <QuestionCard
-                    question={question}
-                    index={index}
-                    total={questions.length}
-                    onUpdate={updateQuestion}
-                    onDelete={deleteQuestion}
-                    onMove={moveQuestion}
-                  />
-                </motion.div>
-              ))}
-            </AnimatePresence>
+            {questions.map((question, index) => (
+              <QuestionCard
+                key={question.id}
+                question={question}
+                index={index}
+                total={questions.length}
+                onUpdate={updateQuestion}
+                onDelete={deleteQuestion}
+                onMove={moveQuestion}
+              />
+            ))}
 
             <div className="flex gap-4 pt-2">
               <button
@@ -317,7 +365,7 @@ export default function ExamBuilderPage() {
                 className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-vision-navy/30 py-4 font-bold text-vision-navy transition-all hover:border-vision-navy hover:bg-vision-navy/5 dark:border-vision-gold/30 dark:text-vision-gold dark:hover:border-vision-gold dark:hover:bg-vision-gold/5"
               >
                 <Plus className="h-5 w-5" />
-                إضافة سؤال اختياري
+                إضافة سؤال MCQ
               </button>
               <button
                 type="button"
@@ -332,12 +380,22 @@ export default function ExamBuilderPage() {
             <div className="rounded-[2rem] border border-slate-200 bg-white/70 p-6 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-[#0A2540]/40">
               <h3 className="mb-3 flex items-center gap-2 text-lg font-extrabold text-[#0A2540] dark:text-white">
                 <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                جاهز للربط
+                جاهز للحفظ
               </h3>
               <p className="text-sm font-bold leading-6 text-slate-500 dark:text-slate-400">
-                تم تنظيف المحرر من أي بيانات hardcoded، وأصبح يعتمد بالكامل على state محلي فارغ
-                حتى يتصل بالـ backend لاحقاً.
+                بعد ربط الحفظ الحقيقي بقاعدة البيانات، هتتمكن من نشر الامتحان ومتابعة حالة الدفع أو المجانية.
               </p>
+              {saveMessage ? (
+                <p
+                  className={`mt-4 rounded-2xl px-4 py-3 text-sm font-bold ${
+                    saveState === 'error'
+                      ? 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300'
+                      : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300'
+                  }`}
+                >
+                  {saveMessage}
+                </p>
+              ) : null}
             </div>
           </div>
         </div>
@@ -346,7 +404,7 @@ export default function ExamBuilderPage() {
       {isBankOpen ? (
         <QuestionBankModal
           isOpen={isBankOpen}
-          questions={EMPTY_QUESTION_BANK}
+          questions={bankQuestions.length > 0 ? bankQuestions : EMPTY_QUESTION_BANK}
           onClose={() => setIsBankOpen(false)}
           onImport={handleBankImport}
         />
