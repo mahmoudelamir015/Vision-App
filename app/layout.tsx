@@ -8,9 +8,29 @@ const cairo = Cairo({
   display: 'swap',
 });
 
+const metadataBase = process.env.APP_URL?.startsWith('http') ? new URL(process.env.APP_URL) : undefined;
+
 export const metadata: Metadata = {
   title: 'Vision Educational Center',
   description: 'Smart Auth System for Vision Educational Center',
+  metadataBase,
+  openGraph: {
+    title: 'Vision Educational Center',
+    description: 'Smart Auth System for Vision Educational Center',
+    type: 'website',
+    locale: 'ar_EG',
+    images: ['/og.png'],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Vision Educational Center',
+    description: 'Smart Auth System for Vision Educational Center',
+    images: ['/og.png'],
+  },
+  icons: {
+    icon: '/logo.png',
+    apple: '/logo.png',
+  },
 };
 
 export default function RootLayout({
