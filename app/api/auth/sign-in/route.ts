@@ -15,11 +15,7 @@ export async function POST(request: Request) {
   const { data, error } = await supabase.auth.signInWithPassword({ phone, password });
   if (error || !data.user) return NextResponse.json({ error: "رقم الهاتف أو كلمة المرور غير صحيحة" }, { status: 401 });
 
-  const { data: profile } = await supabase
-    .from("users")
-    .select("id, name, phone, role")
-    .eq("auth_user_id", data.user.id)
-    .maybeSingle();
+  const { data: profile } = await supabase.from("users").select("id, name, phone, role").eq("auth_user_id", data.user.id).maybeSingle();
   if (!profile || !["student", "parent", "teacher"].includes(profile.role)) {
     await supabase.auth.signOut();
     return NextResponse.json({ error: "الحساب غير مهيأ للدخول" }, { status: 403 });

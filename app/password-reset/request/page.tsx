@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 export default function PasswordResetRequest() {
@@ -9,10 +9,11 @@ export default function PasswordResetRequest() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setLoading(true);
     setMsg(null);
+
     try {
       const response = await fetch("/api/auth/password-reset/request", {
         method: "POST",
