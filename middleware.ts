@@ -28,11 +28,20 @@ export async function middleware(request: NextRequest) {
       },
     },
   });
-  const claimsResult = await supabase.auth.getClaims();
-  const claims = claimsResult.data?.claims ?? null;
-  if (!claims?.sub) return NextResponse.redirect(new URL("/", request.url));
-  const { data: profile } = await supabase.from("users").select("role").eq("auth_user_id", claims.sub).maybeSingle();
-  if (profile?.role !== required.role) return NextResponse.redirect(new URL("/", request.url));
+  const { data: authUser } = await supabase.auth.getUser();
+  const user = authUser.user;
+  
+  const applyRedirect = (urlPath: string) => {
+    const redirectUrl = new URL(urlPath, request.url);
+    const redirectResponse = NextResponse.redirect(redirectUrl);
+    const setCookieHeaders = response.headers.getSetCookie();
+    setCookieHeaders.forEach((c) => redirectResponse.headers.append("Set-Cookie", c));
+    return redirectResponse;
+  };
+
+  if (!user) return applyRedirect("/");
+  const { data: profile } = await supabase.from("users").select("role").eq("auth_user_id", user.id).maybeSingle();
+  if (profile?.role !== required.role) return applyRedirect("/");
   return response;
 }
 

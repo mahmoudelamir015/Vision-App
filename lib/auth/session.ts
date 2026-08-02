@@ -13,14 +13,14 @@ export type AppProfile = {
 export async function getCurrentAppProfile(): Promise<AppProfile | null> {
   const cookieStore = await cookies();
   const supabase = createRouteSupabaseClient(cookieStore);
-  const claimsResult = await supabase.auth.getClaims();
-  const claims = claimsResult.data?.claims ?? null;
-  if (!claims?.sub) return null;
+  const { data: authUser } = await supabase.auth.getUser();
+  const user = authUser.user;
+  if (!user) return null;
 
   const { data } = await supabase
     .from("users")
     .select("id, role, name, phone")
-    .eq("auth_user_id", claims.sub)
+    .eq("auth_user_id", user.id)
     .maybeSingle();
 
   if (!data || !["student", "parent", "teacher"].includes(data.role)) return null;
