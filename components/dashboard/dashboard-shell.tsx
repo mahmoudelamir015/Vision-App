@@ -41,10 +41,10 @@ export function DashboardShell({
   const [showNotifications, setShowNotifications] = useState(false);
 
   return (
-    <div className="relative flex min-h-screen overflow-hidden bg-slate-50 text-[#0A2540]" dir="rtl">
+    <div className="relative isolate flex min-h-screen overflow-hidden bg-slate-50 text-[#0A2540]" dir="rtl">
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute right-[-10%] top-[10%] h-[600px] w-[600px] rounded-full bg-[#D4AF37]/10 blur-[150px]" />
-        <div className="absolute left-[-10%] bottom-[20%] h-[500px] w-[500px] rounded-full bg-blue-500/10 blur-[120px]" />
+        <div className="pointer-events-none absolute right-[-10%] top-[10%] h-[600px] w-[600px] rounded-full bg-[#D4AF37]/10 blur-[150px]" />
+        <div className="pointer-events-none absolute left-[-10%] bottom-[20%] h-[500px] w-[500px] rounded-full bg-blue-500/10 blur-[120px]" />
       </div>
 
       <AnimatePresence>
@@ -53,14 +53,14 @@ export function DashboardShell({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-[#0A2540]/60 backdrop-blur-sm lg:hidden"
+            className="pointer-events-auto fixed inset-0 z-40 bg-[#0A2540]/60 backdrop-blur-sm lg:hidden"
             onClick={() => setIsSidebarOpen(false)}
           />
         ) : null}
       </AnimatePresence>
 
       <motion.aside
-        className={`fixed right-0 top-0 z-50 flex h-full w-72 flex-col border-l border-white/20 bg-white/70 shadow-[0_0_40px_rgba(0,0,0,0.05)] backdrop-blur-2xl transition-transform duration-300 lg:static ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}`}
+        className={`fixed right-0 top-0 z-[60] flex h-full w-72 flex-col border-l border-white/20 bg-white/70 shadow-[0_0_40px_rgba(0,0,0,0.05)] backdrop-blur-2xl transition-transform duration-300 lg:static ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}`}
       >
         <div className="flex items-center justify-between border-b border-black/5 p-8 pb-6">
           <div className="flex flex-col gap-2">
@@ -135,7 +135,7 @@ export function DashboardShell({
         </div>
       </motion.aside>
 
-      <main className="relative z-10 flex h-screen flex-1 flex-col overflow-hidden">
+      <main className="relative z-20 flex h-screen flex-1 flex-col overflow-hidden">
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-black/5 bg-white/50 px-6 py-4 backdrop-blur-xl lg:px-10">
           <div className="flex items-center gap-4">
             <button
