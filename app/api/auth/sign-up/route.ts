@@ -1,9 +1,21 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { normalizeEgyptianPhone } from "@/lib/auth/phone";
+import { createServiceSupabaseClient } from "@/lib/supabase/admin";
 import { createRouteSupabaseClient } from "@/lib/supabase/server";
 
 const roles = new Set(["student", "parent", "teacher"]);
+
+function getReadableSupabaseError(error: unknown) {
+  const message = error && typeof error === "object" && "message" in error ? String((error as { message?: unknown }).message ?? "") : "";
+  const code = error && typeof error === "object" && "code" in error ? String((error as { code?: unknown }).code ?? "") : "";
+
+  if (code === "23505" || /already (?:exists|registered)|duplicate key|unique/i.test(message)) {
+    return "رقم الهاتف مسجل بالفعل";
+  }
+
+  return message || "تعذر إنشاء الحساب";
+}
 
 export async function POST(request: Request) {
   const body = (await request.json()) as Record<string, unknown>;
@@ -34,6 +46,10 @@ export async function POST(request: Request) {
         ? body.photo_name
         : null;
   const parentPhone = normalizeEgyptianPhone(typeof body.parent_phone === "string" ? body.parent_phone : "");
+  if (role === "student" && parentPhone && parentPhone === phone) {
+    return NextResponse.json({ error: "رقم الطالب لازم يختلف عن رقم ولي الأمر" }, { status: 400 });
+  }
+
   const subjects = Array.isArray(body.subjects) ? body.subjects.filter((item): item is string => typeof item === "string") : [];
 
   const { data, error } = await supabase.auth.signUp({
@@ -56,7 +72,31 @@ export async function POST(request: Request) {
   });
 
   if (error || !data.user) {
-    return NextResponse.json({ error: "تعذر إنشاء الحساب بهذا الرقم" }, { status: 400 });
+    return NextResponse.json({ error: getReadableSupabaseError(error) }, { status: 400 });
+  }
+
+  const serviceSupabase = createServiceSupabaseClient();
+  const { error: profileError } = await serviceSupabase.from("users").insert({
+    id: data.user.id,
+    auth_user_id: data.user.id,
+    name,
+    phone,
+    role,
+    stage,
+    grade,
+    track,
+    school_name: schoolName,
+    parent_phone: parentPhone || null,
+    subjects,
+    student_code: studentCode,
+    extra: {
+      profile_image: profileImage,
+    },
+  });
+
+  if (profileError) {
+    await serviceSupabase.auth.admin.deleteUser(data.user.id);
+    return NextResponse.json({ error: getReadableSupabaseError(profileError) }, { status: 400 });
   }
 
   return NextResponse.json({ requiresPhoneVerification: !data.session, role });

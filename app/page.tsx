@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowRight, ChevronDown, Eye, EyeOff, GraduationCap, Lock, User, Users } from "lucide-react";
 import { OptionalPhotoPicker } from "@/components/registration/optional-photo-picker";
+import { normalizeEgyptianPhone } from "@/lib/auth/phone";
 import { fetchSystemSettings, subscribeToSystemSettings } from "@/lib/supabase/system-settings";
 
 type Role = "student" | "parent" | "teacher";
@@ -250,6 +251,12 @@ export default function AuthPage() {
       }
 
       if (role === "student") {
+        const studentPhone = normalizeEgyptianPhone(String(formData.get("student_phone") ?? "").trim());
+        const parentPhone = normalizeEgyptianPhone(String(formData.get("parent_phone") ?? "").trim());
+        if (studentPhone && parentPhone && studentPhone === parentPhone) {
+          throw new Error("رقم الطالب لازم يختلف عن رقم ولي الأمر");
+        }
+
         const result = await authRequest<{ requiresPhoneVerification: boolean }>("/api/auth/sign-up", {
           name: String(formData.get("student_name") ?? "").trim(),
           phone: String(formData.get("student_phone") ?? "").trim(),
