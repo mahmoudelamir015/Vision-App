@@ -24,9 +24,7 @@ export function AnimatedSelect({ label, placeholder, value, options, onChange, d
   const rootRef = useRef<HTMLDivElement | null>(null);
   const selectedOption = options.find((option) => option.value === value);
 
-  useEffect(() => {
-    if (disabled) setIsOpen(false);
-  }, [disabled]);
+  const open = isOpen && !disabled;
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent | TouchEvent) => {
@@ -58,13 +56,13 @@ export function AnimatedSelect({ label, placeholder, value, options, onChange, d
           className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-right text-base font-semibold text-[#0A2540] outline-none transition-all hover:border-[#D4AF37] hover:bg-[#FFFCF7] disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
         >
           <span className={selectedOption ? "" : "text-slate-400"}>{selectedOption?.label ?? placeholder}</span>
-          <ChevronDown className={`h-5 w-5 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+          <ChevronDown className={`h-5 w-5 shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
         </motion.button>
 
         {hint ? <p className="mt-2 text-xs font-medium text-slate-500">{hint}</p> : null}
 
         <AnimatePresence>
-          {isOpen && !disabled ? (
+          {open ? (
             <motion.div
               initial={{ opacity: 0, y: -8, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}

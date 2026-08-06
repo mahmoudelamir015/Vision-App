@@ -8,7 +8,7 @@ const cairo = Cairo({
   display: 'swap',
 });
 
-const metadataBase = process.env.APP_URL?.startsWith('http') ? new URL(process.env.APP_URL) : undefined;
+const metadataBase = new URL(process.env.APP_URL?.startsWith("http") ? process.env.APP_URL : "http://localhost:3000");
 
 export const metadata: Metadata = {
   title: 'Vision Educational Center',
