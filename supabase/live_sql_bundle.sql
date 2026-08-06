@@ -19,6 +19,7 @@ create table if not exists public.users (
   student_code text,
   extra jsonb not null default '{}'::jsonb,
   permissions jsonb not null default '[]'::jsonb,
+  active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -36,6 +37,7 @@ alter table public.users add column if not exists subjects jsonb not null defaul
 alter table public.users add column if not exists student_code text;
 alter table public.users add column if not exists extra jsonb not null default '{}'::jsonb;
 alter table public.users add column if not exists permissions jsonb not null default '[]'::jsonb;
+alter table public.users add column if not exists active boolean not null default true;
 alter table public.users add column if not exists created_at timestamptz not null default now();
 alter table public.users add column if not exists updated_at timestamptz not null default now();
 
