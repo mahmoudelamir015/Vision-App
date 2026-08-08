@@ -8,7 +8,7 @@ const roles = new Set(["student", "parent", "teacher"]);
 
 function makeAuthEmail(phone: string) {
   const digits = phone.replace(/\D/g, "");
-  return `${digits}@vision.local`;
+  return `${digits}@vision-center.com`;
 }
 
 function parseString(value: unknown): string | null {

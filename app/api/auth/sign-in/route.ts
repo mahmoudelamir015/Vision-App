@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   const supabase = createRouteSupabaseClient(await cookies());
   const phoneValue = phone ?? "";
   const phoneDigits = phoneValue.replace(/\D/g, "");
-  const authEmail = `${phoneDigits}@vision.local`;
+  const authEmail = `${phoneDigits}@vision-center.com`;
   const attempts = [
     () => supabase.auth.signInWithPassword({ phone: phoneValue, password }),
     () => supabase.auth.signInWithPassword({ email: authEmail, password }),
