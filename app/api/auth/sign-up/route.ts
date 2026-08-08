@@ -6,6 +6,19 @@ import { createRouteSupabaseClient } from "@/lib/supabase/server";
 
 const roles = new Set(["student", "parent", "teacher"]);
 
+function makeAuthEmail(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  return `${digits}@vision.local`;
+}
+
+function parseString(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function parseStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string").map((item) => item.trim()).filter(Boolean) : [];
+}
+
 function getReadableSupabaseError(error: unknown) {
   const message = error && typeof error === "object" && "message" in error ? String((error as { message?: unknown }).message ?? "") : "";
   const code = error && typeof error === "object" && "code" in error ? String((error as { code?: unknown }).code ?? "") : "";
@@ -18,11 +31,11 @@ function getReadableSupabaseError(error: unknown) {
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as Record<string, unknown>;
-  const role = typeof body.role === "string" ? body.role : "";
-  const phone = normalizeEgyptianPhone(typeof body.phone === "string" ? body.phone : "");
-  const name = typeof body.name === "string" ? body.name.trim() : "";
-  const password = typeof body.password === "string" ? body.password : "";
+  const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
+  const role = parseString(body?.role) ?? "";
+  const phone = normalizeEgyptianPhone(parseString(body?.phone) ?? "");
+  const name = parseString(body?.name) ?? "";
+  const password = parseString(body?.password) ?? "";
 
   if (!roles.has(role) || !phone || !name || password.length < 8) {
     return NextResponse.json({ error: "البيانات غير مكتملة أو كلمة المرور أقل من 8 حروف" }, { status: 400 });
@@ -34,31 +47,31 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "التسجيل مغلق حالياً" }, { status: 403 });
   }
 
-  const stage = typeof body.stage === "string" ? body.stage : null;
-  const grade = typeof body.grade === "string" ? body.grade : null;
-  const track = typeof body.track === "string" ? body.track : null;
-  const schoolName = typeof body.school_name === "string" ? body.school_name : null;
-  const studentCode = typeof body.student_code === "string" ? body.student_code : null;
-  const profileImage =
-    typeof body.profile_image === "string"
-      ? body.profile_image
-      : typeof body.photo_name === "string"
-        ? body.photo_name
-        : null;
-  const parentPhone = normalizeEgyptianPhone(typeof body.parent_phone === "string" ? body.parent_phone : "");
+  const stage = parseString(body?.stage);
+  const grade = parseString(body?.grade);
+  const track = parseString(body?.track);
+  const schoolName = parseString(body?.school_name);
+  const studentCode = parseString(body?.student_code);
+  const profileImage = parseString(body?.profile_image) ?? parseString(body?.photo_name);
+  const parentPhoneValue = parseString(body?.parent_phone);
+  const parentPhone = parentPhoneValue ? normalizeEgyptianPhone(parentPhoneValue) : null;
+  const childName = parseString(body?.child_name);
+  const subjects = parseStringArray(body?.subjects);
+
   if (role === "student" && parentPhone && parentPhone === phone) {
     return NextResponse.json({ error: "رقم الطالب لازم يختلف عن رقم ولي الأمر" }, { status: 400 });
   }
 
-  const subjects = Array.isArray(body.subjects) ? body.subjects.filter((item): item is string => typeof item === "string") : [];
-
-  const { data, error } = await supabase.auth.signUp({
-    phone,
+  const authEmail = makeAuthEmail(phone);
+  const signUpResult = await supabase.auth.signUp({
+    email: authEmail,
     password,
     options: {
       data: {
         name,
         role,
+        phone,
+        auth_email: authEmail,
         stage,
         grade,
         track,
@@ -67,18 +80,19 @@ export async function POST(request: Request) {
         subjects,
         student_code: studentCode,
         profile_image: profileImage,
+        child_name: childName,
       },
     },
   });
 
-  if (error || !data.user) {
-    return NextResponse.json({ error: getReadableSupabaseError(error) }, { status: 400 });
+  if (signUpResult.error || !signUpResult.data.user) {
+    return NextResponse.json({ error: getReadableSupabaseError(signUpResult.error) }, { status: 400 });
   }
 
   const serviceSupabase = createServiceSupabaseClient();
   const { error: profileError } = await serviceSupabase.from("users").insert({
-    id: data.user.id,
-    auth_user_id: data.user.id,
+    id: signUpResult.data.user.id,
+    auth_user_id: signUpResult.data.user.id,
     name,
     phone,
     role,
@@ -86,18 +100,22 @@ export async function POST(request: Request) {
     grade,
     track,
     school_name: schoolName,
-    parent_phone: parentPhone || null,
+    parent_phone: parentPhone ?? null,
     subjects,
     student_code: studentCode,
+    permissions: [],
+    active: true,
     extra: {
       profile_image: profileImage,
+      auth_email: authEmail,
+      child_name: childName,
     },
   });
 
   if (profileError) {
-    await serviceSupabase.auth.admin.deleteUser(data.user.id);
+    await serviceSupabase.auth.admin.deleteUser(signUpResult.data.user.id);
     return NextResponse.json({ error: getReadableSupabaseError(profileError) }, { status: 400 });
   }
 
-  return NextResponse.json({ requiresPhoneVerification: !data.session, role });
+  return NextResponse.json({ requiresPhoneVerification: !signUpResult.data.session, role });
 }
