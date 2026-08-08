@@ -122,16 +122,19 @@ $$ language plpgsql;
 
 create table if not exists public.attendance_tokens (
   id uuid primary key default gen_random_uuid(),
-  student_phone text not null,
+  student_phone text,
+  shared boolean not null default false,
   token_hash text not null unique,
-  pin_hash text not null,
+  pin_hash text,
   expires_at timestamptz not null,
   consumed_at timestamptz,
+  use_count integer not null default 0,
   created_at timestamptz not null default now()
 );
 
 create index if not exists idx_attendance_tokens_student_phone on public.attendance_tokens (student_phone);
 create index if not exists idx_attendance_tokens_expires_at on public.attendance_tokens (expires_at);
+create index if not exists idx_attendance_tokens_shared on public.attendance_tokens (shared);
 
 drop policy if exists "users_select_self_or_admin" on public.users;
 drop policy if exists "users_insert_self_or_admin" on public.users;
@@ -217,6 +220,46 @@ create policy "system_settings_admin_delete"
 alter table public.attendance_tokens enable row level security;
 
 drop function if exists public.issue_attendance_token(text, integer);
+drop function if exists public.issue_shared_attendance_token(integer);
+
+create or replace function public.issue_shared_attendance_token(
+  p_valid_for_seconds integer default 60
+)
+returns table (
+  token text,
+  expires_at timestamptz
+)
+as $$
+declare
+  v_valid_seconds integer := greatest(5, least(coalesce(p_valid_for_seconds, 60), 1800));
+  v_token text;
+  v_expires_at timestamptz;
+begin
+  if not public.is_admin_user() then
+    raise exception 'NOT_AUTHORIZED';
+  end if;
+
+  v_token := encode(gen_random_bytes(24), 'hex');
+  v_expires_at := now() + make_interval(secs => v_valid_seconds);
+
+  insert into public.attendance_tokens (
+    shared,
+    token_hash,
+    pin_hash,
+    expires_at,
+    use_count
+  ) values (
+    true,
+    encode(digest(v_token, 'sha256'), 'hex'),
+    null,
+    v_expires_at,
+    0
+  );
+
+  return query
+  select v_token, v_expires_at;
+end;
+$$ language plpgsql security definer set search_path = public;
 
 create or replace function public.issue_attendance_token(
   p_student_phone text,
@@ -278,11 +321,12 @@ declare
   v_student_phone text := nullif(btrim(coalesce(student_phone, '')), '');
   v_balance numeric;
 begin
-  if v_token is null or v_pin is null or v_student_phone is null then
-    raise exception 'TOKEN_AND_PHONE_REQUIRED';
+  if v_token is null then
+    raise exception 'TOKEN_REQUIRED';
   end if;
 
-  select * into v_token_row
+  select *
+  into v_token_row
   from public.attendance_tokens t
   where t.token_hash = encode(digest(v_token, 'sha256'), 'hex')
   for update;
@@ -291,23 +335,39 @@ begin
     raise exception 'INVALID_ATTENDANCE_TOKEN';
   end if;
 
-  if v_token_row.student_phone <> v_student_phone then
-    raise exception 'TOKEN_PHONE_MISMATCH';
+  if v_token_row.shared then
+    if v_token_row.expires_at < now() then
+      raise exception 'ATTENDANCE_TOKEN_EXPIRED';
+    end if;
+  else
+    if v_pin is null or v_student_phone is null then
+      raise exception 'TOKEN_AND_PHONE_REQUIRED';
+    end if;
+
+    if v_token_row.student_phone <> v_student_phone then
+      raise exception 'TOKEN_PHONE_MISMATCH';
+    end if;
+
+    if v_token_row.consumed_at is not null then
+      raise exception 'ATTENDANCE_TOKEN_USED';
+    end if;
+
+    if v_token_row.expires_at < now() then
+      raise exception 'ATTENDANCE_TOKEN_EXPIRED';
+    end if;
   end if;
 
-  if v_token_row.consumed_at is not null then
-    raise exception 'ATTENDANCE_TOKEN_USED';
-  end if;
-
-  if v_token_row.expires_at < now() then
-    raise exception 'ATTENDANCE_TOKEN_EXPIRED';
-  end if;
-
-  if not exists (select 1 from public.users u where u.phone = v_student_phone and u.role = 'student') then
+  if not exists (
+    select 1
+    from public.users u
+    where u.phone = v_student_phone
+      and u.role = 'student'
+  ) then
     raise exception 'STUDENT_NOT_FOUND';
   end if;
 
-  select coalesce(sum(amount), 0) into v_balance
+  select coalesce(sum(amount), 0)
+  into v_balance
   from public.wallets w
   where w.student_phone = v_student_phone;
 
@@ -315,9 +375,15 @@ begin
     raise exception 'INSUFFICIENT_BALANCE';
   end if;
 
-  update public.attendance_tokens
-  set consumed_at = now()
-  where id = v_token_row.id;
+  if v_token_row.shared then
+    update public.attendance_tokens
+    set use_count = v_token_row.use_count + 1
+    where id = v_token_row.id;
+  else
+    update public.attendance_tokens
+    set consumed_at = now()
+    where id = v_token_row.id;
+  end if;
 
   return query
   insert into public.attendance (
