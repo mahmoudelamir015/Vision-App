@@ -7,7 +7,6 @@ export default function PasswordResetVerifyForm() {
   const search = useSearchParams();
   const phone = search.get("phone") ?? "";
   const router = useRouter();
-  const [token, setToken] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -17,18 +16,29 @@ export default function PasswordResetVerifyForm() {
     setLoading(true);
     setMsg(null);
 
+    if (!phone) {
+      setMsg("رقم الهاتف مطلوب");
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 8) {
+      setMsg("كلمة المرور لازم تكون 8 أحرف على الأقل");
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch("/api/auth/password-reset/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, token, password }),
+        body: JSON.stringify({ phone, password }),
       });
-      const result = (await response.json()) as { error?: string };
+      const result = (await response.json()) as { error?: string; role?: string; ok?: boolean };
       if (!response.ok) throw new Error(result.error ?? "تعذر تغيير كلمة المرور");
-      const me = await fetch("/api/auth/me");
-      const profile = (await me.json()) as { profile?: { role?: string } };
-      const destination = profile.profile?.role === "teacher" ? "/teacher/dashboard" : profile.profile?.role === "parent" ? "/parent/dashboard" : "/student/dashboard";
-      router.push(destination);
+      setMsg("تم تغيير كلمة المرور بنجاح. جاري تحويلك للوحة الحساب...");
+      const destination = result.role === "teacher" ? "/teacher/dashboard" : result.role === "parent" ? "/parent/dashboard" : "/student/dashboard";
+      window.setTimeout(() => router.push(destination), 800);
     } catch (err) {
       setMsg(err instanceof Error ? err.message : "تعذر تغيير كلمة المرور");
     } finally {
@@ -45,16 +55,6 @@ export default function PasswordResetVerifyForm() {
           <input disabled value={phone} className="mt-1 w-full rounded-md border bg-slate-50 px-3 py-2" />
         </label>
         <label className="block text-sm font-bold">
-          رمز التحقق
-          <input
-            inputMode="numeric"
-            maxLength={6}
-            value={token}
-            onChange={(e) => setToken(e.target.value.replace(/\D/g, "").slice(0, 6))}
-            className="mt-1 w-full rounded-md border px-3 py-2"
-          />
-        </label>
-        <label className="block text-sm font-bold">
           كلمة المرور الجديدة
           <input
             type="password"
@@ -65,7 +65,7 @@ export default function PasswordResetVerifyForm() {
           />
         </label>
         <button disabled={loading} className="rounded-md bg-[#0A2540] px-4 py-2 text-white">
-          {loading ? "جارٍ الحفظ..." : "حفظ كلمة المرور"}
+          {loading ? "جارٍ الحفظ..." : "تعيين كلمة المرور"}
         </button>
         {msg ? <div className="text-sm text-red-600">{msg}</div> : null}
       </form>

@@ -294,11 +294,19 @@ export default function AuthPage() {
         return;
       }
 
+      const teacherName = String(formData.get("teacher_name") ?? "").trim();
+      const teacherPhoneRaw = String(formData.get("teacher_phone") ?? "").trim();
+      const teacherPhone = normalizeEgyptianPhone(teacherPhoneRaw);
+      const teacherPassword = String(formData.get("teacher_password") ?? "").trim();
+      if (!teacherName || !teacherPhoneRaw || !teacherPhone || teacherPassword.length < 8) {
+        throw new Error("من فضلك اكتب الاسم ورقم الهاتف المصري الصحيح وكلمة مرور مكونة من 8 أحرف على الأقل.");
+      }
+
       const result = await authRequest<{ requiresPhoneVerification: boolean }>("/api/auth/sign-up", {
-        name: String(formData.get("teacher_name") ?? "").trim(),
-        phone: String(formData.get("teacher_phone") ?? "").trim(),
+        name: teacherName,
+        phone: teacherPhoneRaw,
         role: "teacher",
-        password: String(formData.get("teacher_password") ?? "").trim(),
+        password: teacherPassword,
         stage: teacherStage,
         school_name: String(formData.get("teacher_school") ?? "").trim() || undefined,
         subjects: String(formData.get("teacher_subjects") ?? "")

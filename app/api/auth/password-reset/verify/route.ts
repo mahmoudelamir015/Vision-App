@@ -1,21 +1,34 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { normalizeEgyptianPhone } from "@/lib/auth/phone";
-import { createRouteSupabaseClient } from "@/lib/supabase/server";
+import { createServiceSupabaseClient } from "@/lib/supabase/admin";
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as { phone?: string; token?: string; password?: string };
+  const body = (await request.json()) as { phone?: string; password?: string };
   const phone = normalizeEgyptianPhone(body.phone ?? "");
-  if (!phone || !/^\d{6}$/.test(body.token ?? "") || (body.password?.length ?? 0) < 8) {
-    return NextResponse.json({ error: "بيانات التحقق غير صحيحة" }, { status: 400 });
+
+  if (!phone || (body.password?.length ?? 0) < 8) {
+    return NextResponse.json({ error: "رقم الهاتف أو كلمة المرور غير صحيحة" }, { status: 400 });
   }
 
-  const supabase = createRouteSupabaseClient(await cookies());
-  const { error: verifyError } = await supabase.auth.verifyOtp({ phone, token: body.token!, type: "sms" });
-  if (verifyError) return NextResponse.json({ error: "رمز التحقق غير صحيح أو انتهت صلاحيته" }, { status: 401 });
+  const serviceSupabase = createServiceSupabaseClient();
+  const { data: user, error: userError } = await serviceSupabase
+    .from("users")
+    .select("auth_user_id, role")
+    .eq("phone", phone)
+    .limit(1)
+    .maybeSingle();
 
-  const { error: updateError } = await supabase.auth.updateUser({ password: body.password! });
-  if (updateError) return NextResponse.json({ error: "تعذر تغيير كلمة المرور" }, { status: 400 });
+  if (userError || !user?.auth_user_id) {
+    return NextResponse.json({ error: "لم يتم العثور على الحساب" }, { status: 404 });
+  }
 
-  return NextResponse.json({ ok: true });
+  const { error: updateError } = await serviceSupabase.auth.admin.updateUserById(user.auth_user_id, {
+    password: body.password!,
+  });
+
+  if (updateError) {
+    return NextResponse.json({ error: "تعذر تغيير كلمة المرور" }, { status: 400 });
+  }
+
+  return NextResponse.json({ ok: true, role: user.role ?? "student" });
 }

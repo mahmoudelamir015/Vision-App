@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { normalizeEgyptianPhone } from "@/lib/auth/phone";
 
 export default function TeacherSignupPage() {
   const router = useRouter();
@@ -17,10 +18,17 @@ export default function TeacherSignupPage() {
     setMsg(null);
 
     try {
+      if (!name.trim() || !phone.trim() || password.length < 8) {
+        throw new Error("من فضلك اكتب الاسم ورقم الهاتف وكلمة مرور مكونة من 8 أحرف على الأقل.");
+      }
+      if (!normalizeEgyptianPhone(phone)) {
+        throw new Error("الرجاء إدخال رقم هاتف مصري صحيح.");
+      }
+
       const response = await fetch("/api/auth/sign-up", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, phone, password, role: "teacher" }),
+        body: JSON.stringify({ name: name.trim(), phone: phone.trim(), password, role: "teacher" }),
       });
       const result = (await response.json()) as { error?: string; requiresPhoneVerification?: boolean };
       if (!response.ok) throw new Error(result.error ?? "تعذر إنشاء الحساب");

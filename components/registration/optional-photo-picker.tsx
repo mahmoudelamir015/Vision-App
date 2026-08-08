@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import Image from "next/image";
 import { motion } from "motion/react";
-import { Camera, Upload } from "lucide-react";
+import { Camera, Upload, X } from "lucide-react";
 
 type OptionalPhotoPickerProps = {
   label: string;
@@ -18,6 +18,13 @@ export function OptionalPhotoPicker({ label, description, fileName, previewUrl, 
 
   const openPicker = () => {
     inputRef.current?.click();
+  };
+
+  const clearSelection = () => {
+    onChange(null, null);
+    if (inputRef.current) {
+      inputRef.current.value = "";
+    }
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,17 +73,27 @@ export function OptionalPhotoPicker({ label, description, fileName, previewUrl, 
       </motion.button>
 
       {previewUrl ? (
-        <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-          <div className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white">
-            <Image src={previewUrl} alt="Preview" fill sizes="56px" className="object-cover" />
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 text-sm font-bold text-slate-700">
-              <Camera className="h-4 w-4 text-[#D4AF37]" />
-              تم اختيار الصورة
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+          <div className="flex items-center gap-3">
+            <div className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white">
+              <Image src={previewUrl} alt="Preview" fill sizes="56px" className="object-cover" />
             </div>
-            <p className="mt-1 truncate text-xs font-medium text-slate-500">{fileName}</p>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 text-sm font-bold text-slate-700">
+                <Camera className="h-4 w-4 text-[#D4AF37]" />
+                تم اختيار الصورة
+              </div>
+              <p className="mt-1 truncate text-xs font-medium text-slate-500">{fileName}</p>
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={clearSelection}
+            className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-600 transition-colors hover:bg-red-100"
+          >
+            <X className="h-3.5 w-3.5" />
+            إلغاء الصورة
+          </button>
         </div>
       ) : (
         <div className="rounded-2xl bg-slate-50 px-4 py-3 text-xs font-medium text-slate-500">

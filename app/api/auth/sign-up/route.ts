@@ -35,6 +35,7 @@ export async function POST(request: Request) {
   const role = parseString(body?.role) ?? "";
   const phone = normalizeEgyptianPhone(parseString(body?.phone) ?? "");
   const name = parseString(body?.name) ?? "";
+  const fullName = parseString(body?.full_name) ?? name;
   const password = parseString(body?.password) ?? "";
 
   if (!roles.has(role) || !phone || !name || password.length < 8) {
@@ -69,6 +70,7 @@ export async function POST(request: Request) {
     options: {
       data: {
         name,
+        full_name: fullName,
         role,
         phone,
         auth_email: authEmail,
@@ -93,7 +95,8 @@ export async function POST(request: Request) {
   const { error: profileError } = await serviceSupabase.from("users").insert({
     id: signUpResult.data.user.id,
     auth_user_id: signUpResult.data.user.id,
-    name,
+    name: fullName,
+    full_name: fullName,
     phone,
     role,
     stage,
