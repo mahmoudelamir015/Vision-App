@@ -8,6 +8,7 @@ export type ExamRecord = {
   grade?: string;
   track?: string;
   pricing_mode: "free" | "paid";
+  price?: number;
   duration_minutes: number;
   shuffle_questions: boolean;
   published_at?: string;
@@ -40,6 +41,7 @@ const normalizeExam = (record: SupabaseRecord | null): ExamRecord | null => {
     grade: typeof record.grade === "string" ? record.grade : undefined,
     track: typeof record.track === "string" ? record.track : undefined,
     pricing_mode: pricingMode,
+    price: typeof record.price === "number" ? record.price : Number(record.price ?? 0),
     duration_minutes: typeof record.duration_minutes === "number" ? record.duration_minutes : Number(record.duration_minutes ?? 0),
     shuffle_questions: Boolean(record.shuffle_questions),
     published_at: typeof record.published_at === "string" ? record.published_at : undefined,
@@ -117,6 +119,7 @@ export async function saveExamWithQuestions(input: SaveExamInput): Promise<ExamR
     grade: input.exam.grade ?? null,
     track: input.exam.track ?? null,
     pricing_mode: input.exam.pricing_mode,
+    price: input.exam.price ?? 0,
     duration_minutes: input.exam.duration_minutes,
     shuffle_questions: input.exam.shuffle_questions,
     published_at: input.exam.published_at ?? null,

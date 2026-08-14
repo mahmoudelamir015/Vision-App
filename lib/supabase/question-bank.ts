@@ -15,6 +15,7 @@ export type QuestionBankRecord = {
   grade?: string;
   track?: string;
   subject?: string;
+  price?: number;
   published?: boolean;
   createdAt?: string;
 };
@@ -39,6 +40,7 @@ const normalize = (record: SupabaseRecord | null): QuestionBankRecord | null => 
     grade: typeof record.grade === "string" ? record.grade : undefined,
     track: typeof record.track === "string" ? record.track : undefined,
     subject: typeof record.subject === "string" ? record.subject : undefined,
+    price: typeof record.price === "number" ? record.price : Number(record.price ?? 0),
     published: typeof record.published === "boolean" ? record.published : undefined,
     createdAt: typeof record.created_at === "string" ? record.created_at : undefined,
   };
@@ -70,6 +72,7 @@ export async function saveQuestionBankQuestion(question: QuestionBankRecord): Pr
     grade: question.grade ?? null,
     track: question.track ?? null,
     subject: question.subject ?? null,
+    price: question.price ?? 0,
     published: question.published ?? true,
     created_at: question.createdAt ?? new Date().toISOString(),
   };

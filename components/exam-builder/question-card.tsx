@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowDown, ArrowUp, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, Image as ImageIcon, Plus, Trash2, X } from 'lucide-react';
 import type { Question } from './types';
 
 type QuestionCardProps = {
@@ -10,6 +10,8 @@ type QuestionCardProps = {
   onUpdate: (id: string, updates: Partial<Question>) => void;
   onDelete: (id: string) => void;
   onMove: (index: number, direction: 'up' | 'down') => void;
+  onAddOption: (id: string) => void;
+  onRemoveOption: (id: string, optionIndex: number) => void;
 };
 
 export function QuestionCard({
@@ -19,7 +21,12 @@ export function QuestionCard({
   onUpdate,
   onDelete,
   onMove,
+  onAddOption,
+  onRemoveOption,
 }: QuestionCardProps) {
+  const canEditOptions = question.type === 'mcq';
+  const canRemoveOption = question.options.length > 2;
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800 sm:p-6">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-2 border-b border-slate-100 pb-4 dark:border-slate-700">
@@ -79,9 +86,21 @@ export function QuestionCard({
         </div>
 
         <div className="space-y-3 rounded-xl border border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-900/30">
-          <label className="mb-3 block text-sm font-bold text-slate-700 dark:text-slate-300">
-            الإجابات (حدد الدائرة بجانب الإجابة الصحيحة):
-          </label>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">
+              الإجابات (حدد الدائرة بجانب الإجابة الصحيحة):
+            </label>
+            {canEditOptions ? (
+              <button
+                type="button"
+                onClick={() => onAddOption(question.id)}
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition-colors hover:border-vision-gold hover:text-vision-gold dark:border-slate-700 dark:bg-slate-900"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                إضافة خيار
+              </button>
+            ) : null}
+          </div>
           {question.options.map((option, optionIndex) => (
             <div key={optionIndex} className="flex items-center gap-3">
               <input
@@ -94,8 +113,9 @@ export function QuestionCard({
               <input
                 type="text"
                 value={option}
-                disabled={question.type === 'true_false'}
+                disabled={!canEditOptions}
                 onChange={(event) => {
+                  if (!canEditOptions) return;
                   const nextOptions = [...question.options];
                   nextOptions[optionIndex] = event.target.value;
                   onUpdate(question.id, { options: nextOptions });
@@ -103,6 +123,16 @@ export function QuestionCard({
                 placeholder={`الخيار ${optionIndex + 1}`}
                 className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 font-medium outline-none transition-all focus:border-vision-gold focus:ring-1 focus:ring-vision-gold disabled:bg-slate-100 disabled:opacity-80 dark:border-slate-700 dark:bg-slate-900 dark:disabled:bg-slate-800/80"
               />
+              {canEditOptions && canRemoveOption ? (
+                <button
+                  type="button"
+                  onClick={() => onRemoveOption(question.id, optionIndex)}
+                  className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"
+                  aria-label="حذف الاختيار"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              ) : null}
             </div>
           ))}
         </div>

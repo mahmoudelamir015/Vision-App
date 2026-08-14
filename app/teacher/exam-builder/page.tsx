@@ -16,7 +16,7 @@ const createQuestion = (type: QuestionType): Question => ({
   id: `${type}-${Date.now()}-${Math.random()}`,
   type,
   text: '',
-  options: type === 'mcq' ? ['', '', '', ''] : ['طµط­', 'ط®ط·ط£'],
+  options: type === 'mcq' ? ['', '', '', ''] : ['صح', 'خطأ'],
   correctAnswer: 0,
   explanation: '',
 });
@@ -33,6 +33,7 @@ export default function ExamBuilderPage() {
   const [publishedAt, setPublishedAt] = useState('');
   const [endsAt, setEndsAt] = useState('');
   const [pricingMode, setPricingMode] = useState<'free' | 'paid'>('free');
+  const [examPrice, setExamPrice] = useState('0');
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [saveMessage, setSaveMessage] = useState('');
   const hasCelebratedRef = useRef(false);
@@ -81,9 +82,7 @@ export default function ExamBuilderPage() {
   };
 
   const updateQuestion = (id: string, updates: Partial<Question>) => {
-    setQuestions((current) =>
-      current.map((question) => (question.id === id ? { ...question, ...updates } : question)),
-    );
+    setQuestions((current) => current.map((question) => (question.id === id ? { ...question, ...updates } : question)));
   };
 
   const deleteQuestion = (id: string) => {
@@ -97,11 +96,33 @@ export default function ExamBuilderPage() {
 
       const next = [...current];
       const targetIndex = direction === 'up' ? index - 1 : index + 1;
-      const temp = next[index];
-      next[index] = next[targetIndex];
-      next[targetIndex] = temp;
+      [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
       return next;
     });
+  };
+
+  const addQuestionOption = (id: string) => {
+    setQuestions((current) =>
+      current.map((question) => {
+        if (question.id !== id || question.type !== 'mcq') return question;
+        return { ...question, options: [...question.options, ''] };
+      }),
+    );
+  };
+
+  const removeQuestionOption = (id: string, optionIndex: number) => {
+    setQuestions((current) =>
+      current.map((question) => {
+        if (question.id !== id || question.type !== 'mcq' || question.options.length <= 2) return question;
+        const nextOptions = question.options.filter((_, index) => index !== optionIndex);
+        const nextCorrectAnswer = Math.min(question.correctAnswer, nextOptions.length - 1);
+        return {
+          ...question,
+          options: nextOptions,
+          correctAnswer: Math.max(0, nextCorrectAnswer),
+        };
+      }),
+    );
   };
 
   const handleBankImport = (importedQuestions: Question[]) => {
@@ -116,7 +137,7 @@ export default function ExamBuilderPage() {
   const handleSaveExam = async () => {
     if (!examTitle.trim() || questions.length === 0) {
       setSaveState('error');
-      setSaveMessage('اكتب عنوان الامتحان وأضف سؤال واحد على الأقل.');
+      setSaveMessage('اكتب عنوان الامتحان واضف سؤال واحد على الاقل.');
       return;
     }
 
@@ -130,6 +151,7 @@ export default function ExamBuilderPage() {
         grade: selectedGrade || undefined,
         track: undefined,
         pricing_mode: pricingMode,
+        price: Number(examPrice || 0),
         duration_minutes: Number(durationMinutes || 0),
         shuffle_questions: shuffleQuestions,
         published_at: publishedAt || undefined,
@@ -148,7 +170,7 @@ export default function ExamBuilderPage() {
 
     if (!savedExam) {
       setSaveState('error');
-      setSaveMessage('فشل حفظ الامتحان. راجع صلاحيات قاعدة البيانات أو الـ RLS.');
+      setSaveMessage('فشل حفظ الامتحان. راجع صلاحيات قاعدة البيانات او الـ RLS.');
       return;
     }
 
@@ -163,10 +185,10 @@ export default function ExamBuilderPage() {
           <div>
             <h1 className="text-2xl font-bold text-vision-navy dark:text-vision-gold">بناء الامتحان</h1>
             <p className="mt-1 text-slate-500 dark:text-slate-400">
-              أنشئ الامتحان، اختار المرحلة والصف، وحدد مجاني أو مدفوع ثم احفظه في قاعدة البيانات.
+              أنشئ الامتحان، اختار المرحلة والصف، وحدد مجاني او مدفوع ثم احفظه في قاعدة البيانات.
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <button
               type="button"
               onClick={() => window.history.back()}
@@ -181,7 +203,7 @@ export default function ExamBuilderPage() {
               className="flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-2.5 font-bold text-slate-700 transition-colors hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
             >
               <BookOpen className="h-5 w-5" />
-              بنك الأسئلة
+              بنك الاسئلة
             </button>
             <button
               type="button"
@@ -190,16 +212,16 @@ export default function ExamBuilderPage() {
               className="flex items-center gap-2 rounded-xl bg-vision-navy px-6 py-2.5 font-bold text-white shadow-lg transition-opacity disabled:cursor-not-allowed disabled:opacity-60 dark:bg-vision-gold dark:text-vision-navy"
             >
               <Save className="h-5 w-5" />
-              {saveState === 'saving' ? 'جارٍ الحفظ...' : 'حفظ الامتحان'}
+              {saveState === 'saving' ? 'جاري الحفظ...' : 'حفظ الامتحان'}
             </button>
           </div>
         </header>
 
-        <div className="grid items-start grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
           <div className="sticky top-6 space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800 lg:col-span-1">
             <div className="flex items-center gap-3 border-b border-slate-100 pb-4 dark:border-slate-700">
               <Settings className="h-5 w-5 text-vision-navy dark:text-vision-gold" />
-              <h2 className="text-lg font-bold text-slate-800 dark:text-white">إعدادات الامتحان</h2>
+              <h2 className="text-lg font-bold text-slate-800 dark:text-white">اعدادات الامتحان</h2>
             </div>
 
             <div className="space-y-4">
@@ -243,6 +265,19 @@ export default function ExamBuilderPage() {
               </div>
 
               <div>
+                <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">سعر الامتحان</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={examPrice}
+                  onChange={(event) => setExamPrice(event.target.value)}
+                  placeholder="0"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none transition-all focus:border-vision-gold focus:ring-1 focus:ring-vision-gold dark:border-slate-700 dark:bg-slate-900"
+                />
+                <p className="mt-2 text-xs font-bold text-slate-500 dark:text-slate-400">0 يعني مجاني، واي رقم اكبر من 0 يعني مدفوع.</p>
+              </div>
+
+              <div>
                 <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">المرحلة الدراسية</label>
                 <select
                   value={selectedStage}
@@ -251,7 +286,7 @@ export default function ExamBuilderPage() {
                 >
                   <option value="">اختر المرحلة</option>
                   <option value="primary">ابتدائي</option>
-                  <option value="prep">إعدادي</option>
+                  <option value="prep">اعدادي</option>
                   <option value="secondary">ثانوي</option>
                 </select>
               </div>
@@ -264,13 +299,13 @@ export default function ExamBuilderPage() {
                   className="w-full cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none transition-all focus:border-vision-gold focus:ring-1 focus:ring-vision-gold dark:border-slate-700 dark:bg-slate-900"
                 >
                   <option value="">اختر الصف</option>
-                  <option value="1">الصف الأول</option>
+                  <option value="1">الصف الاول</option>
                   <option value="2">الصف الثاني</option>
                   <option value="3">الصف الثالث</option>
                 </select>
               </div>
 
-              <label className="flex cursor-pointer items-center gap-3 pt-2 group">
+              <label className="flex cursor-pointer items-center gap-3 pt-2">
                 <input
                   type="checkbox"
                   checked={shuffleQuestions}
@@ -279,14 +314,12 @@ export default function ExamBuilderPage() {
                 />
                 <span className="flex select-none items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
                   <Shuffle className="h-4 w-4 text-slate-400" />
-                  خلط ترتيب الأسئلة
+                  خلط ترتيب الاسئلة
                 </span>
               </label>
 
               <div className="border-t border-slate-100 pt-4 dark:border-slate-700">
-                <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">
-                  المدة بالدقائق (اختياري)
-                </label>
+                <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">المدة بالدقائق (اختياري)</label>
                 <div className="relative">
                   <input
                     type="number"
@@ -302,9 +335,7 @@ export default function ExamBuilderPage() {
 
               {pricingMode === 'paid' ? (
                 <div className="rounded-2xl border border-dashed border-vision-gold/40 bg-vision-gold/5 p-4">
-                  <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                    الامتحان مدفوع، وسيتطلب ربطه بآلية الدفع قبل النشر.
-                  </p>
+                  <p className="text-sm font-bold text-slate-700 dark:text-slate-300">الامتحان مدفوع، وسيمكن نشره بعد ربطه بآلية الدفع المناسبة.</p>
                 </div>
               ) : (
                 <div className="rounded-2xl border border-dashed border-emerald-200 bg-emerald-50 p-4">
@@ -323,7 +354,7 @@ export default function ExamBuilderPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-300">تاريخ الإغلاق</label>
+                  <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-300">تاريخ الاغلاق</label>
                   <input
                     type="datetime-local"
                     value={endsAt}
@@ -340,7 +371,7 @@ export default function ExamBuilderPage() {
               <EmptyState
                 icon={BookOpen}
                 title="ابدأ بإضافة سؤال"
-                description="استخدم الأزرار التالية لإضافة سؤال اختيار من متعدد أو سؤال صح وخطأ."
+                description="استخدم الازرار التالية لإضافة سؤال اختيار من متعدد او سؤال صح وخطأ."
                 actionLabel="إضافة سؤال"
                 onAction={() => addQuestion('mcq')}
               />
@@ -355,10 +386,12 @@ export default function ExamBuilderPage() {
                 onUpdate={updateQuestion}
                 onDelete={deleteQuestion}
                 onMove={moveQuestion}
+                onAddOption={addQuestionOption}
+                onRemoveOption={removeQuestionOption}
               />
             ))}
 
-            <div className="flex gap-4 pt-2">
+            <div className="flex flex-col gap-4 pt-2 sm:flex-row">
               <button
                 type="button"
                 onClick={() => addQuestion('mcq')}
@@ -383,7 +416,7 @@ export default function ExamBuilderPage() {
                 جاهز للحفظ
               </h3>
               <p className="text-sm font-bold leading-6 text-slate-500 dark:text-slate-400">
-                بعد ربط الحفظ الحقيقي بقاعدة البيانات، هتتمكن من نشر الامتحان ومتابعة حالة الدفع أو المجانية.
+                بعد ربط الحفظ الحقيقي بقاعدة البيانات، هتقدر تنشر الامتحان وتتابع حالة الدفع او المجانية.
               </p>
               {saveMessage ? (
                 <p

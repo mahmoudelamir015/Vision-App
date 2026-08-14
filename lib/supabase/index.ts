@@ -21,6 +21,9 @@ export const supabaseTableNames = {
   questionBank: "question_bank",
   notifications: "notifications",
   examAttempts: "exam_attempts",
+  changeRequests: "change_requests",
+  teacherStudentGroups: "teacher_student_groups",
+  teacherMaterials: "teacher_materials",
 } as const;
 
 export type SupabaseRecord = Record<string, unknown>;

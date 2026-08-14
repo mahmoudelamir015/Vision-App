@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { ArrowRight, Bell, LogOut, Menu, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export type DashboardNavItem = {
   id: string;
@@ -39,6 +40,7 @@ export function DashboardShell({
 }: DashboardShellProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const isMobile = useIsMobile();
 
   return (
     <div className="relative isolate flex min-h-screen overflow-hidden bg-slate-50 text-[#0A2540]" dir="rtl">
@@ -159,7 +161,7 @@ export function DashboardShell({
               </button>
             ) : null}
 
-            <div className="hidden items-center gap-4 rounded-full border border-black/5 bg-white p-1.5 pr-2 shadow-sm md:flex">
+            <div className={`items-center gap-4 rounded-full border border-black/5 bg-white p-1.5 pr-2 shadow-sm ${isMobile ? 'hidden' : 'hidden md:flex'}`}>
               {userBadge}
             </div>
           </div>
@@ -191,7 +193,7 @@ export function DashboardShell({
           </div>
         </header>
 
-        <div className="relative flex-1 overflow-y-auto p-6 lg:p-10">{children}</div>
+        <div className="relative flex-1 overflow-y-auto p-4 sm:p-6 lg:p-10">{children}</div>
       </main>
     </div>
   );
