@@ -233,7 +233,11 @@ export default function AuthPage() {
       if (view === "login") {
         const identifier = String(formData.get("auth_identifier") ?? "").trim();
         const password = String(formData.get("auth_password") ?? "").trim();
-        const result = await authRequest<{ profile: { role: Role } }>("/api/auth/sign-in", { phone: identifier, password });
+        const result = await authRequest<{ profile: { role: Role } }>("/api/auth/sign-in", {
+          phone: identifier,
+          password,
+          expectedRole: role,
+        });
         if (result.profile.role === "student") router.push("/student/dashboard");
         if (result.profile.role === "parent") router.push("/parent/dashboard");
         if (result.profile.role === "teacher") router.push("/teacher/dashboard");

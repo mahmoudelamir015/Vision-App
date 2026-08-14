@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createRouteSupabaseClient } from "@/lib/supabase/server";
 import { createServiceSupabaseClient } from "@/lib/supabase/admin";
+import { createRouteSupabaseClient } from "@/lib/supabase/server";
 
 type ProfileRow = {
   id?: string;
@@ -22,16 +22,22 @@ function readProfileImage(extra: Record<string, unknown> | null | undefined) {
   return typeof extra?.profile_image === "string" ? extra.profile_image : undefined;
 }
 
-export async function GET() {
+async function getCurrentAuthUserId() {
   const cookieStore = await cookies();
-  const supabase = createRouteSupabaseClient(cookieStore);
-  const { data: authUser } = await supabase.auth.getUser();
-  if (!authUser.user) return NextResponse.json({ error: "غير مسجل" }, { status: 401 });
+  const routeSupabase = createRouteSupabaseClient(cookieStore);
+  const { data: authUser } = await routeSupabase.auth.getUser();
+  return authUser.user?.id ?? null;
+}
 
+export async function GET() {
+  const authUserId = await getCurrentAuthUserId();
+  if (!authUserId) return NextResponse.json({ error: "غير مسجل" }, { status: 401 });
+
+  const supabase = createServiceSupabaseClient();
   const { data, error } = await supabase
     .from("users")
     .select("id, auth_user_id, name, phone, role, stage, grade, track, school_name, student_code, subjects, extra")
-    .eq("auth_user_id", authUser.user.id)
+    .eq("auth_user_id", authUserId)
     .maybeSingle();
 
   if (error || !data) return NextResponse.json({ error: "تعذر تحميل الملف الشخصي" }, { status: 400 });
@@ -46,15 +52,14 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  const cookieStore = await cookies();
-  const supabase = createRouteSupabaseClient(cookieStore);
-  const { data: authUser } = await supabase.auth.getUser();
-  if (!authUser.user) return NextResponse.json({ error: "غير مسجل" }, { status: 401 });
+  const authUserId = await getCurrentAuthUserId();
+  if (!authUserId) return NextResponse.json({ error: "غير مسجل" }, { status: 401 });
 
+  const supabase = createServiceSupabaseClient();
   const { data: profile } = await supabase
     .from("users")
     .select("id, auth_user_id, role, name, phone, stage, grade, track, school_name, student_code, subjects, extra")
-    .eq("auth_user_id", authUser.user.id)
+    .eq("auth_user_id", authUserId)
     .maybeSingle();
 
   if (!profile) return NextResponse.json({ error: "تعذر العثور على الحساب" }, { status: 404 });
@@ -79,14 +84,13 @@ export async function PATCH(request: Request) {
     }
   }
 
-  const serviceSupabase = createServiceSupabaseClient();
-  const { error: updateError } = await serviceSupabase.from("users").update(payload).eq("auth_user_id", authUser.user.id);
+  const { error: updateError } = await supabase.from("users").update(payload).eq("auth_user_id", authUserId);
   if (updateError) return NextResponse.json({ error: updateError.message }, { status: 400 });
 
-  const { data, error } = await serviceSupabase
+  const { data, error } = await supabase
     .from("users")
     .select("id, auth_user_id, name, phone, role, stage, grade, track, school_name, student_code, subjects, extra")
-    .eq("auth_user_id", authUser.user.id)
+    .eq("auth_user_id", authUserId)
     .maybeSingle();
 
   if (error || !data) return NextResponse.json({ error: "تعذر حفظ الملف الشخصي" }, { status: 400 });
