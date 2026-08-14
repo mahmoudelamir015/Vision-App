@@ -158,6 +158,10 @@ export default function TeacherDashboard() {
       router.push('/teacher/profile');
       return;
     }
+    if (tab === 'content') {
+      router.push('/teacher/content');
+      return;
+    }
     setActiveTab(tab as (typeof navItems)[number]['id']);
   };
 
@@ -185,8 +189,10 @@ export default function TeacherDashboard() {
         return (
           <EmptyState
             icon={BookOpen}
-            title="لا يوجد محتوى تعليمي منشور"
-            description="سجلات المحتوى والدروس ستظهر هنا بعد الربط مع الـ backend."
+            title="المحتوى التعليمي"
+            description="افتح صفحة المحتوى لإضافة ملفات PDF أو Word وتحديد السعر قبل النشر."
+            actionLabel="رفع محتوى جديد"
+            onAction={() => router.push('/teacher/content')}
           />
         );
       case 'reports':

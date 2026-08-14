@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Archive, Bell, FileText, GraduationCap, LayoutDashboard, Trophy, User, Wallet } from 'lucide-react';
 import { DashboardShell, type DashboardNavItem } from '@/components/dashboard/dashboard-shell';
 import { EmptyState } from '@/components/ui/empty-state';
+import type { TeacherLinkRecord } from '@/lib/supabase/learner-network';
 import { fetchNotifications, type NotificationRecord } from '@/lib/supabase/notifications';
 import { fetchPublishedExams, type ExamRecord } from '@/lib/supabase/exams';
 import { fetchSystemSettings, subscribeToSystemSettings } from '@/lib/supabase/system-settings';
@@ -12,7 +13,7 @@ import { fetchSystemSettings, subscribeToSystemSettings } from '@/lib/supabase/s
 const navItems: DashboardNavItem[] = [
   { id: 'dashboard', label: 'الرئيسية', icon: LayoutDashboard },
   { id: 'profile', label: 'حسابي', icon: User },
-  { id: 'my-teachers', label: 'معلموني', icon: GraduationCap },
+  { id: 'my-teachers', label: 'المدرسين', icon: GraduationCap },
   { id: 'exams', label: 'الاختبارات', icon: FileText },
   { id: 'archive', label: 'الأرشيف', icon: Archive },
   { id: 'leaderboard', label: 'ترتيب الطلاب', icon: Trophy },
@@ -25,6 +26,14 @@ export default function StudentDashboard() {
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
   const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
   const [exams, setExams] = useState<ExamRecord[]>([]);
+  const [teachers, setTeachers] = useState<TeacherLinkRecord[]>([]);
+  const [studentProfile, setStudentProfile] = useState<{
+    name?: string;
+    stage?: string;
+    grade?: string;
+    track?: string;
+    student_code?: string;
+  } | null>(null);
   const [notifyStage, setNotifyStage] = useState('');
   const [notifyGrade, setNotifyGrade] = useState('');
   const [notifyTrack, setNotifyTrack] = useState('');
@@ -70,11 +79,21 @@ export default function StudentDashboard() {
     let isMounted = true;
 
     const loadDashboardData = async () => {
-      const [notificationsRows, examRows] = await Promise.all([fetchNotifications(), fetchPublishedExams()]);
+      const [notificationsRows, examRows, dashboardResponse] = await Promise.all([
+        fetchNotifications(),
+        fetchPublishedExams(),
+        fetch('/api/student/dashboard', { cache: 'no-store' }),
+      ]);
       if (!isMounted) return;
 
       setNotifications(notificationsRows);
       setExams(examRows);
+
+      const payload = await dashboardResponse.json().catch(() => null);
+      if (dashboardResponse.ok && payload) {
+        setTeachers(Array.isArray(payload.teachers) ? payload.teachers : []);
+        setStudentProfile(payload.student ?? null);
+      }
     };
 
     void loadDashboardData();
@@ -195,11 +214,44 @@ export default function StudentDashboard() {
   const content = (() => {
     switch (activeTab) {
       case 'my-teachers':
-        return (
+        return teachers.length > 0 ? (
+          <div className="grid gap-4 md:grid-cols-2">
+            {teachers.map((teacher) => (
+              <div
+                key={teacher.id ?? teacher.phone}
+                className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#D4AF37] dark:border-white/10 dark:bg-white/5"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-lg font-extrabold text-[#0A2540] dark:text-white">{teacher.name}</h3>
+                    <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">{teacher.school_name ?? 'مدرسة غير محددة'}</p>
+                  </div>
+                  <GraduationCap className="h-6 w-6 text-[#D4AF37]" />
+                </div>
+                <div className="mt-4 grid gap-2 text-sm font-bold text-slate-600 dark:text-slate-300">
+                  <div className="rounded-2xl bg-slate-50 px-3 py-2 dark:bg-black/20">المرحلة: {teacher.stage ?? '-'}</div>
+                  <div className="rounded-2xl bg-slate-50 px-3 py-2 dark:bg-black/20">الصف: {teacher.grade ?? '-'}</div>
+                  <div className="rounded-2xl bg-slate-50 px-3 py-2 dark:bg-black/20">القسم: {teacher.track ?? '-'}</div>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold text-slate-500 dark:text-slate-400">
+                  {teacher.subjects?.length ? (
+                    teacher.subjects.map((subject) => (
+                      <span key={subject} className="rounded-full bg-slate-100 px-3 py-1 dark:bg-white/5">
+                        {subject}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-white/5">لا توجد مواد مسجلة</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
           <EmptyState
             icon={GraduationCap}
             title="لا توجد قائمة معلمين حالياً"
-            description="المعلمين المرتبطين بالمرحلة والصف هيظهروا هنا بعد الربط من قاعدة البيانات."
+            description="المعلمين المرتبطين بالمرحلة والصف والقسم هيظهروا هنا تلقائياً بعد الربط من قاعدة البيانات."
           />
         );
       case 'exams':
@@ -288,6 +340,21 @@ export default function StudentDashboard() {
                   {walletEnabled ? 'شوف الرصيد والعمليات بعد التفعيل.' : 'المحفظة غير متاحة من النظام حالياً.'}
                 </p>
               </button>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/5">
+                <p className="text-sm font-bold text-slate-500 dark:text-slate-400">المدرسين المرتبطين</p>
+                <h3 className="mt-2 text-3xl font-black text-[#0A2540] dark:text-white">{teachers.length}</h3>
+                <p className="mt-2 text-sm font-bold text-slate-500 dark:text-slate-400">
+                  {studentProfile ? `${studentProfile.stage ?? '-'} • ${studentProfile.grade ?? '-'}${studentProfile.track ? ` • ${studentProfile.track}` : ''}` : 'بيانات الطالب قيد التحميل'}
+                </p>
+              </div>
+              <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/5">
+                <p className="text-sm font-bold text-slate-500 dark:text-slate-400">الطالب المرتبط</p>
+                <h3 className="mt-2 text-2xl font-extrabold text-[#0A2540] dark:text-white">{studentProfile?.name ?? 'جاري تحميل البيانات'}</h3>
+                <p className="mt-2 text-sm font-bold text-slate-500 dark:text-slate-400">{studentProfile?.student_code ?? '-'}</p>
+              </div>
             </div>
 
             <EmptyState

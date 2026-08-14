@@ -43,7 +43,7 @@ export default function RootLayout({
       <head>
         <meta charSet="utf-8" />
       </head>
-      <body className="font-cairo selection:bg-vision-gold selection:text-vision-navy" suppressHydrationWarning>
+      <body className="overflow-x-hidden font-cairo selection:bg-vision-gold selection:text-vision-navy" suppressHydrationWarning>
         {children}
       </body>
     </html>

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createRouteSupabaseClient } from "@/lib/supabase/server";
 import { createServiceSupabaseClient } from "@/lib/supabase/admin";
+import { normalizeEgyptianPhone } from "@/lib/auth/phone";
+import { fetchFinancialItemsForLearner, fetchTeachersForLearner } from "@/lib/supabase/learner-network";
 
 export async function GET() {
   const cookieStore = await cookies();
@@ -18,42 +20,36 @@ export async function GET() {
   if (!parentProfile) return NextResponse.json({ error: "تعذر العثور على الحساب" }, { status: 404 });
 
   const serviceSupabase = createServiceSupabaseClient();
+  const parentPhoneCandidates = Array.from(
+    new Set([normalizeEgyptianPhone(parentProfile.phone) ?? parentProfile.phone, parentProfile.phone].filter(Boolean)),
+  );
+
   const { data: students } = await serviceSupabase
     .from("users")
-    .select("id, name, phone, stage, grade, track, student_code")
-    .eq("parent_phone", parentProfile.phone)
-    .eq("role", "student");
+    .select("id, name, phone, stage, grade, track, student_code, role, parent_phone")
+    .eq("role", "student")
+    .in("parent_phone", parentPhoneCandidates);
 
   const child = Array.isArray(students) && students.length > 0 ? students[0] : null;
+  const teachers = child
+    ? await fetchTeachersForLearner(serviceSupabase, {
+        stage: child.stage ?? null,
+        grade: child.grade ?? null,
+        track: child.track ?? null,
+      })
+    : [];
 
-  const { data: exams } = await serviceSupabase
-    .from("exams")
-    .select("id, title, stage, grade, track, price, pricing_mode")
-    .gt("price", 0)
-    .or("published_at.not.is.null");
-
-  const financialItems = Array.isArray(exams)
-    ? exams
-        .filter((exam) => {
-          if (!child) return false;
-          const stageMatch = !exam.stage || exam.stage === child.stage;
-          const gradeMatch = !exam.grade || exam.grade === child.grade;
-          const trackMatch = !exam.track || exam.track === child.track;
-          return stageMatch && gradeMatch && trackMatch;
-        })
-        .map((exam) => ({
-          id: exam.id,
-          title: exam.title,
-          price: Number(exam.price ?? 0),
-          stage: exam.stage,
-          grade: exam.grade,
-          track: exam.track,
-          kind: "exam",
-        }))
+  const financialItems = child
+    ? await fetchFinancialItemsForLearner(serviceSupabase, {
+        stage: child.stage ?? null,
+        grade: child.grade ?? null,
+        track: child.track ?? null,
+      })
     : [];
 
   return NextResponse.json({
     child,
+    teachers,
     financialItems,
   });
 }

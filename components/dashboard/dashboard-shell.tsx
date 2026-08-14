@@ -43,7 +43,7 @@ export function DashboardShell({
   const isMobile = useIsMobile();
 
   return (
-    <div className="relative isolate flex min-h-screen overflow-hidden bg-slate-50 text-[#0A2540]" dir="rtl">
+    <div className="relative isolate flex min-h-screen overflow-x-hidden overflow-y-auto bg-slate-50 text-[#0A2540]" dir="rtl">
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="pointer-events-none absolute right-[-10%] top-[10%] h-[600px] w-[600px] rounded-full bg-[#D4AF37]/10 blur-[150px]" />
         <div className="pointer-events-none absolute left-[-10%] bottom-[20%] h-[500px] w-[500px] rounded-full bg-blue-500/10 blur-[120px]" />
@@ -64,12 +64,12 @@ export function DashboardShell({
       <motion.aside
         className={`fixed right-0 top-0 z-[60] flex h-full w-72 flex-col border-l border-white/20 bg-white/70 shadow-[0_0_40px_rgba(0,0,0,0.05)] backdrop-blur-2xl transition-transform duration-300 lg:static ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}`}
       >
-        <div className="flex items-center justify-between border-b border-black/5 p-8 pb-6">
-          <div className="flex flex-col gap-2">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0A2540] text-sm font-black text-white">
+        <div className="flex items-center justify-between border-b border-black/5 p-5 pb-4 sm:p-6">
+          <div className="flex flex-col gap-1.5">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0A2540] text-sm font-black text-white">
               VC
             </div>
-            <h2 className="text-xl font-extrabold tracking-tight text-[#0A2540]">
+            <h2 className="text-lg font-extrabold tracking-tight text-[#0A2540] sm:text-xl">
               {brandTitle}
             </h2>
           </div>
@@ -82,7 +82,7 @@ export function DashboardShell({
           </button>
         </div>
 
-        <nav className="mt-4 flex-1 space-y-1 overflow-y-auto p-4">
+        <nav className="mt-3 flex-1 space-y-1 overflow-y-auto p-3 sm:p-4">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -95,7 +95,7 @@ export function DashboardShell({
                   onTabChange(item.id);
                   setIsSidebarOpen(false);
                 }}
-                className="group relative flex w-full items-center gap-4 overflow-hidden rounded-2xl px-4 py-3.5 text-right transition-all duration-300"
+                className="group relative flex w-full items-center gap-3 overflow-hidden rounded-2xl px-3 py-3 text-right text-sm transition-all duration-300 sm:gap-4 sm:px-4 sm:py-3.5 sm:text-base"
               >
                 {isActive ? (
                   <motion.div
@@ -129,7 +129,7 @@ export function DashboardShell({
           <button
             type="button"
             onClick={onLogout}
-            className="flex w-full items-center gap-3 rounded-2xl bg-red-50 px-4 py-3.5 font-bold text-red-600 transition-colors hover:bg-red-100"
+            className="flex w-full items-center gap-3 rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600 transition-colors hover:bg-red-100 sm:py-3.5 sm:text-base"
           >
             <LogOut className="h-5 w-5" />
             <span>تسجيل الخروج</span>
@@ -138,23 +138,23 @@ export function DashboardShell({
       </motion.aside>
 
       <main className="relative z-20 flex h-screen flex-1 flex-col overflow-hidden">
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-black/5 bg-white/50 px-6 py-4 backdrop-blur-xl lg:px-10">
+        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-black/5 bg-white/50 px-4 py-3 backdrop-blur-xl sm:px-5 sm:py-4 lg:px-8">
           <div className="flex items-center gap-4">
             <button
               type="button"
               onClick={() => setIsSidebarOpen(true)}
-              className="rounded-xl bg-black/5 p-2.5 transition-colors hover:bg-black/10 lg:hidden"
+              className="rounded-xl bg-black/5 p-2 transition-colors hover:bg-black/10 lg:hidden"
             >
-              <Menu className="h-6 w-6" />
+              <Menu className="h-5 w-5" />
             </button>
 
             {activeTab !== homeTabId ? (
               <button
                 type="button"
                 onClick={() => onTabChange(homeTabId)}
-                className="flex items-center gap-2 rounded-xl border border-black/5 bg-slate-100 p-2.5 text-slate-600 shadow-sm transition-transform hover:scale-105"
+                className="flex items-center gap-2 rounded-xl border border-black/5 bg-slate-100 p-2 text-slate-600 shadow-sm transition-transform hover:scale-105"
               >
-                <ArrowRight className="h-5 w-5" />
+                <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
                 <span className="hidden whitespace-nowrap text-sm font-bold md:inline">
                   {homeLabel}
                 </span>
@@ -193,7 +193,7 @@ export function DashboardShell({
           </div>
         </header>
 
-        <div className="relative flex-1 overflow-y-auto p-4 sm:p-6 lg:p-10">{children}</div>
+        <div className="relative flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-4 lg:p-8">{children}</div>
       </main>
     </div>
   );

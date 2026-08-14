@@ -11,7 +11,17 @@ export type AppProfile = {
   phone: string;
 };
 
+export type AppSession = {
+  authUserId: string;
+  profile: AppProfile;
+};
+
 export async function getCurrentAppProfile(): Promise<AppProfile | null> {
+  const session = await getCurrentAppSession();
+  return session?.profile ?? null;
+}
+
+export async function getCurrentAppSession(): Promise<AppSession | null> {
   const cookieStore = await cookies();
   const supabase = createRouteSupabaseClient(cookieStore);
   const serviceSupabase = createServiceSupabaseClient();
@@ -26,5 +36,8 @@ export async function getCurrentAppProfile(): Promise<AppProfile | null> {
     .maybeSingle();
 
   if (!data || !["student", "parent", "teacher"].includes(data.role)) return null;
-  return data as AppProfile;
+  return {
+    authUserId: user.id,
+    profile: data as AppProfile,
+  };
 }
