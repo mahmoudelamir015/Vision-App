@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Archive, Bell, FileText, GraduationCap, LayoutDashboard, Trophy, Wallet } from 'lucide-react';
+import { Archive, Bell, FileText, GraduationCap, LayoutDashboard, Trophy, User, Wallet } from 'lucide-react';
 import { DashboardShell, type DashboardNavItem } from '@/components/dashboard/dashboard-shell';
 import { EmptyState } from '@/components/ui/empty-state';
 import { fetchNotifications, type NotificationRecord } from '@/lib/supabase/notifications';
@@ -11,6 +11,7 @@ import { fetchSystemSettings, subscribeToSystemSettings } from '@/lib/supabase/s
 
 const navItems: DashboardNavItem[] = [
   { id: 'dashboard', label: 'الرئيسية', icon: LayoutDashboard },
+  { id: 'profile', label: 'حسابي', icon: User },
   { id: 'my-teachers', label: 'معلموني', icon: GraduationCap },
   { id: 'exams', label: 'الاختبارات', icon: FileText },
   { id: 'archive', label: 'الأرشيف', icon: Archive },
@@ -183,6 +184,14 @@ export default function StudentDashboard() {
     </>
   );
 
+  const handleTabChange = (tab: string) => {
+    if (tab === 'profile') {
+      router.push('/student/profile');
+      return;
+    }
+    setActiveTab(tab);
+  };
+
   const content = (() => {
     switch (activeTab) {
       case 'my-teachers':
@@ -298,7 +307,7 @@ export default function StudentDashboard() {
       brandTitle="بوابة الطالب"
       navItems={navItems}
       activeTab={activeTab}
-      onTabChange={setActiveTab}
+      onTabChange={handleTabChange}
       onLogout={() => router.push('/')}
       userBadge={userBadge}
       notifications={notificationsPanel}

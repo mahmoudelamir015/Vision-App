@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bell, BookOpen, FileEdit, LayoutDashboard, PieChart, Users } from 'lucide-react';
+import { Bell, BookOpen, FileEdit, LayoutDashboard, PieChart, User, Users } from 'lucide-react';
 import { DashboardShell, type DashboardNavItem } from '@/components/dashboard/dashboard-shell';
 import { EmptyState } from '@/components/ui/empty-state';
 import { fetchNotifications, type NotificationRecord } from '@/lib/supabase/notifications';
 
 const navItems: DashboardNavItem[] = [
   { id: 'dashboard', label: 'الرئيسية', icon: LayoutDashboard },
+  { id: 'profile', label: 'حسابي', icon: User },
   { id: 'groups', label: 'الصفوف', icon: Users },
   { id: 'exam-builder', label: 'بناء الامتحان', icon: FileEdit },
   { id: 'content', label: 'المحتوى التعليمي', icon: BookOpen },
@@ -152,6 +153,14 @@ export default function TeacherDashboard() {
     </>
   );
 
+  const handleTabChange = (tab: string) => {
+    if (tab === 'profile') {
+      router.push('/teacher/profile');
+      return;
+    }
+    setActiveTab(tab as (typeof navItems)[number]['id']);
+  };
+
   const content = (() => {
     switch (activeTab) {
       case 'groups':
@@ -207,7 +216,7 @@ export default function TeacherDashboard() {
       brandTitle="بوابة المعلم"
       navItems={navItems}
       activeTab={activeTab}
-      onTabChange={(tab) => setActiveTab(tab as (typeof navItems)[number]['id'])}
+      onTabChange={handleTabChange}
       onLogout={() => router.push('/')}
       userBadge={userBadge}
       notifications={notificationsPanel}
