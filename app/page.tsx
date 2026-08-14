@@ -233,8 +233,9 @@ export default function AuthPage() {
       if (view === "login") {
         const identifier = String(formData.get("auth_identifier") ?? "").trim();
         const password = String(formData.get("auth_password") ?? "").trim();
+        const normalizedIdentifier = normalizeEgyptianPhone(identifier) ?? identifier;
         const result = await authRequest<{ profile: { role: Role } }>("/api/auth/sign-in", {
-          phone: identifier,
+          phone: normalizedIdentifier,
           password,
           expectedRole: role,
         });
@@ -255,21 +256,23 @@ export default function AuthPage() {
       }
 
       if (role === "student") {
-        const studentPhone = normalizeEgyptianPhone(String(formData.get("student_phone") ?? "").trim());
-        const parentPhone = normalizeEgyptianPhone(String(formData.get("parent_phone") ?? "").trim());
+        const studentPhoneRaw = String(formData.get("student_phone") ?? "").trim();
+        const parentPhoneRaw = String(formData.get("parent_phone") ?? "").trim();
+        const studentPhone = normalizeEgyptianPhone(studentPhoneRaw);
+        const parentPhone = normalizeEgyptianPhone(parentPhoneRaw);
         if (studentPhone && parentPhone && studentPhone === parentPhone) {
           throw new Error("رقم الطالب لازم يختلف عن رقم ولي الأمر");
         }
 
         const result = await authRequest<{ requiresPhoneVerification: boolean }>("/api/auth/sign-up", {
           name: String(formData.get("student_name") ?? "").trim(),
-          phone: String(formData.get("student_phone") ?? "").trim(),
+          phone: studentPhone ?? studentPhoneRaw,
           role: "student",
           password: String(formData.get("student_password") ?? "").trim(),
           stage: studentStage,
           grade: studentGrade,
           track: studentTrack,
-          parent_phone: String(formData.get("parent_phone") ?? "").trim() || undefined,
+          parent_phone: (parentPhone ?? parentPhoneRaw) || undefined,
         });
         if (result.requiresPhoneVerification) {
           setNotice("تم إرسال رمز تأكيد للهاتف. أكد الرقم ثم سجّل الدخول.");
@@ -281,9 +284,11 @@ export default function AuthPage() {
       }
 
       if (role === "parent") {
+        const parentPhoneRaw = String(formData.get("parent_phone") ?? "").trim();
+        const normalizedParentPhone = normalizeEgyptianPhone(parentPhoneRaw);
         const result = await authRequest<{ requiresPhoneVerification: boolean }>("/api/auth/sign-up", {
           name: String(formData.get("parent_name") ?? "").trim(),
-          phone: String(formData.get("parent_phone") ?? "").trim(),
+          phone: normalizedParentPhone ?? parentPhoneRaw,
           role: "parent",
           password: String(formData.get("parent_password") ?? "").trim(),
           student_code: String(formData.get("parent_link_code") ?? "").trim() || undefined,
@@ -308,7 +313,7 @@ export default function AuthPage() {
 
       const result = await authRequest<{ requiresPhoneVerification: boolean }>("/api/auth/sign-up", {
         name: teacherName,
-        phone: teacherPhoneRaw,
+        phone: teacherPhone ?? teacherPhoneRaw,
         role: "teacher",
         password: teacherPassword,
         stage: teacherStage,

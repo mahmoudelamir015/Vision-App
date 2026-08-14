@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bell, Calendar, CreditCard, LayoutDashboard, MessageCircle } from 'lucide-react';
+import { Bell, Calendar, CreditCard, LayoutDashboard, MessageCircle, User } from 'lucide-react';
 import { DashboardShell, type DashboardNavItem } from '@/components/dashboard/dashboard-shell';
 import { EmptyState } from '@/components/ui/empty-state';
 
@@ -29,6 +29,7 @@ type ParentDashboardData = {
 
 const navItems: DashboardNavItem[] = [
   { id: 'dashboard', label: 'الرئيسية', icon: LayoutDashboard },
+  { id: 'profile', label: 'حسابي', icon: User },
   { id: 'attendance', label: 'الحضور', icon: Calendar },
   { id: 'finance', label: 'المالية', icon: CreditCard },
   { id: 'messages', label: 'رسائل المدرسة', icon: MessageCircle },
@@ -38,6 +39,14 @@ export default function ParentDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [dashboardData, setDashboardData] = useState<ParentDashboardData>({});
+
+  const handleTabChange = (tab: string) => {
+    if (tab === 'profile') {
+      router.push('/parent/profile');
+      return;
+    }
+    setActiveTab(tab);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -195,7 +204,7 @@ export default function ParentDashboard() {
       brandTitle="بوابة ولي الأمر"
       navItems={navItems}
       activeTab={activeTab}
-      onTabChange={setActiveTab}
+      onTabChange={handleTabChange}
       onLogout={() => router.push('/')}
       userBadge={userBadge}
       notifications={notificationsPanel}
