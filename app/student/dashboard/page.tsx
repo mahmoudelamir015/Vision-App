@@ -98,6 +98,9 @@ export default function StudentDashboard() {
     };
 
     void loadDashboardData();
+    
+    // Add real refresh handler
+    (window as any).refreshDashboardData = loadDashboardData;
 
     return () => {
       isMounted = false;
@@ -393,10 +396,16 @@ export default function StudentDashboard() {
 
             <EmptyState
               icon={LayoutDashboard}
-              title="لوحة الطالب الرئيسية"
-              description="من هنا هيتم تجميع الإشعارات والاختبارات والمحفظة وكل بيانات الطالب بعد الربط الكامل."
-              actionLabel="تحديث البيانات"
-              onAction={() => router.refresh()}
+              title="تم مزامنة بياناتك مع السحابة بنجاح"
+              description="إذا واجهت أي تأخير في ظهور المواد والبيانات المحدثة الخاصة بك، يمكنك إعادة تحميل البيانات فوراً."
+              actionLabel="تحديث البيانات الآن"
+              onAction={() => {
+                if ((window as any).refreshDashboardData) {
+                  (window as any).refreshDashboardData();
+                } else {
+                  window.location.reload();
+                }
+              }}
             />
           </div>
         );

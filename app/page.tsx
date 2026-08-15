@@ -326,12 +326,17 @@ export default function AuthPage() {
         const parentName = String(formData.get("parent_name") ?? "").trim();
         const parentPhoneRaw = String(formData.get("parent_phone") ?? "").trim();
         const childName = String(formData.get("parent_child_name") ?? "").trim();
+        const studentPhoneRaw = String(formData.get("parent_student_phone") ?? "").trim();
         const password = String(formData.get("parent_password") ?? "").trim();
 
         if (!parentName) errors.parent_name = "يجب إدخال اسم ولي الأمر";
         const normalizedParentPhone = normalizeEgyptianPhone(parentPhoneRaw);
         if (!normalizedParentPhone) errors.parent_phone = "يجب إدخال رقم هاتف صحيح مكون من 11 رقم";
         if (!childName) errors.parent_child_name = "يجب إدخال اسم الابن";
+        
+        const normalizedStudentPhone = normalizeEgyptianPhone(studentPhoneRaw);
+        if (studentPhoneRaw && !normalizedStudentPhone) errors.parent_student_phone = "يجب إدخال رقم هاتف الطالب بشكل صحيح";
+
         if (password.length < 8) errors.parent_password = "كلمة المرور يجب أن تكون 8 أحرف على الأقل";
 
         if (Object.keys(errors).length > 0) {
@@ -345,6 +350,7 @@ export default function AuthPage() {
           role: "parent",
           password,
           child_name: childName,
+          student_phone: (normalizedStudentPhone ?? studentPhoneRaw) || undefined,
         });
         if (result.requiresPhoneVerification) {
           setNotice("تم إرسال رمز تأكيد للهاتف. أكد الرقم ثم سجّل الدخول.");
@@ -585,7 +591,8 @@ export default function AuthPage() {
                   >
                     <Field label="اسم ولي الأمر" name="parent_name" placeholder="الاسم الكامل" error={fieldErrors.parent_name} />
                     <Field label="رقم الهاتف" name="parent_phone" placeholder="01X XXXX XXXX" error={fieldErrors.parent_phone} />
-                    <Field label="اسم الابن" name="parent_child_name" placeholder="اسم الابن الكامل" error={fieldErrors.parent_child_name} />
+                    <Field label="اسم الابن / الطالب" name="parent_child_name" placeholder="اسم الابن بالكامل" error={fieldErrors.parent_child_name} />
+                    <Field label="رقم هاتف الابن" name="parent_student_phone" placeholder="أدخل رقم الطالب لربط الحساب تلقائياً" error={fieldErrors.parent_student_phone} />
                     <label className="block text-sm font-bold text-[#0A2540]">
                       كلمة المرور
                       <div className="relative mt-1">

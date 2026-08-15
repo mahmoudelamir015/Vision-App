@@ -61,6 +61,8 @@ export async function POST(request: Request) {
   const parentPhone = parentPhoneValue ? normalizeEgyptianPhone(parentPhoneValue) : null;
   const childName = parseString(body?.child_name);
   const subjects = parseStringArray(body?.subjects);
+  let studentPhone = parseString(body?.student_phone);
+  if (studentPhone) studentPhone = normalizeEgyptianPhone(studentPhone);
 
   if (role === "student" && parentPhone && parentPhone === phone) {
     return attachBufferedCookies(NextResponse.json({ error: "رقم الطالب لازم يختلف عن رقم ولي الأمر" }, { status: 400 }));
@@ -84,6 +86,7 @@ export async function POST(request: Request) {
         parent_phone: parentPhone,
         subjects,
         student_code: studentCode,
+        student_phone: studentPhone,
         profile_image: profileImage,
         child_name: childName,
       },
@@ -107,6 +110,7 @@ export async function POST(request: Request) {
     track,
     school_name: schoolName,
     parent_phone: parentPhone ?? null,
+    student_phone: studentPhone ?? null,
     subjects,
     student_code: studentCode,
     permissions: [],
