@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Archive, Bell, FileText, GraduationCap, LayoutDashboard, Trophy, User, Wallet } from 'lucide-react';
+import { Archive, Bell, Clock, FileText, GraduationCap, LayoutDashboard, Trophy, User, Wallet } from 'lucide-react';
 import { DashboardShell, type DashboardNavItem } from '@/components/dashboard/dashboard-shell';
 import { EmptyState } from '@/components/ui/empty-state';
 import type { TeacherLinkRecord } from '@/lib/supabase/learner-network';
@@ -12,6 +12,7 @@ import { fetchSystemSettings, subscribeToSystemSettings } from '@/lib/supabase/s
 
 const navItems: DashboardNavItem[] = [
   { id: 'dashboard', label: 'الرئيسية', icon: LayoutDashboard },
+  { id: 'attendance', label: 'تسجيل الحضور', icon: Clock },
   { id: 'profile', label: 'حسابي', icon: User },
   { id: 'my-teachers', label: 'المدرسين', icon: GraduationCap },
   { id: 'exams', label: 'الاختبارات', icon: FileText },
@@ -38,6 +39,41 @@ export default function StudentDashboard() {
   const [notifyStage, setNotifyStage] = useState('');
   const [notifyGrade, setNotifyGrade] = useState('');
   const [notifyTrack, setNotifyTrack] = useState('');
+
+  // Pin attendance states
+  const [pin, setPin] = useState('');
+  const [isSubmittingPin, setIsSubmittingPin] = useState(false);
+  const [pinFeedback, setPinFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const handlePinSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pin.trim().length !== 4) {
+      setPinFeedback({ type: 'error', message: 'يرجى إدخال الكود المكون من 4 أرقام كاملاً' });
+      return;
+    }
+    setIsSubmittingPin(true);
+    setPinFeedback(null);
+    try {
+      const response = await fetch('/api/student/attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: pin.trim() }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.error ?? 'الكود المدخل غير صالح أو انتهت صلاحيته');
+      }
+      setPinFeedback({ type: 'success', message: 'تم تسجيل حضورك للجلسة بنجاح! شكراً لك.' });
+      setPin('');
+    } catch (err) {
+      setPinFeedback({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'تعذر تسجيل الحضور، يرجى المحاولة لاحقاً',
+      });
+    } finally {
+      setIsSubmittingPin(false);
+    }
+  };
 
   const stageGrades: Record<string, string[]> = {
     primary: ['الصف الأول الابتدائي', 'الصف الثاني الابتدائي', 'الصف الثالث الابتدائي', 'الصف الرابع الابتدائي', 'الصف الخامس الابتدائي', 'الصف السادس الابتدائي'],
@@ -108,7 +144,7 @@ export default function StudentDashboard() {
   }, []);
 
   const notificationsPanel = (
-    <div className="border-b border-slate-100 bg-slate-50/80 p-4 border-slate-200 bg-white">
+    <div className="border-b border-slate-200 bg-white p-4">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-bold text-[#0A2540] text-[#0A2540]">الإشعارات</h3>
         <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-600 bg-slate-100 text-slate-700">
@@ -240,7 +276,7 @@ export default function StudentDashboard() {
               {teachers.map((teacher) => (
                 <div
                   key={teacher.id ?? teacher.phone}
-                  className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#D4AF37] border-slate-200 bg-slate-50"
+                  className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-md transition-all hover:-translate-y-0.5 hover:border-[#D4AF37] hover:shadow-lg"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -299,7 +335,7 @@ export default function StudentDashboard() {
                 key={exam.id ?? exam.title}
                 type="button"
                 onClick={() => router.push(`/student/exam-player?examId=${exam.id ?? ''}`)}
-                className="rounded-[2rem] border border-slate-200 bg-white p-6 text-right shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#D4AF37] border-slate-200 bg-slate-50"
+                className="rounded-[2rem] border border-slate-200 bg-white p-6 text-right shadow-md transition-all hover:-translate-y-0.5 hover:border-[#D4AF37] hover:shadow-lg"
               >
                 <div className="flex items-center justify-between gap-3">
                   <div>
@@ -346,7 +382,7 @@ export default function StudentDashboard() {
         return (
           <div className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-slate-50">
+              <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-md">
                 <div className="flex items-center gap-3">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0A2540] text-white dark:bg-[#D4AF37] dark:text-[#0A2540]">
                     <Wallet className="h-6 w-6" />
@@ -369,7 +405,7 @@ export default function StudentDashboard() {
                 type="button"
                 onClick={() => router.push('/student/wallet')}
                 disabled={!walletEnabled || isLoadingSettings}
-                className="rounded-[2rem] border border-dashed border-slate-200 bg-slate-50 p-6 text-right shadow-sm transition-all hover:border-[#D4AF37] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60 border-slate-200 bg-slate-50"
+                className="rounded-[2rem] border border-dashed border-slate-200 bg-white p-6 text-right shadow-md transition-all hover:border-[#D4AF37] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <p className="text-sm font-bold text-slate-500 text-slate-500">المحفظة</p>
                 <h3 className="mt-2 text-xl font-extrabold text-[#0A2540] text-[#0A2540]">افتح المحفظة</h3>
@@ -380,14 +416,14 @@ export default function StudentDashboard() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-slate-50">
+              <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-md">
                 <p className="text-sm font-bold text-slate-500 text-slate-500">المدرسين المرتبطين</p>
                 <h3 className="mt-2 text-3xl font-black text-[#0A2540] text-[#0A2540]">{teachers.length}</h3>
                 <p className="mt-2 text-sm font-bold text-slate-500 text-slate-500">
                   {studentProfile ? `${studentProfile.stage ?? '-'} • ${studentProfile.grade ?? '-'}${studentProfile.track ? ` • ${studentProfile.track}` : ''}` : 'بيانات الطالب قيد التحميل'}
                 </p>
               </div>
-              <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-slate-50">
+              <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-md">
                 <p className="text-sm font-bold text-slate-500 text-slate-500">الطالب المرتبط</p>
                 <h3 className="mt-2 text-2xl font-extrabold text-[#0A2540] text-[#0A2540]">{studentProfile?.name ?? 'جاري تحميل البيانات'}</h3>
                 <p className="mt-2 text-sm font-bold text-slate-500 text-slate-500">{studentProfile?.student_code ?? '-'}</p>
@@ -407,6 +443,49 @@ export default function StudentDashboard() {
                 }
               }}
             />
+          </div>
+        );
+      case 'attendance':
+        return (
+          <div className="mx-auto max-w-md space-y-6">
+            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-md text-right">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0A2540] text-[#D4AF37]">
+                  <Clock className="h-6 w-6" />
+                </div>
+                <h2 className="text-xl font-extrabold text-[#0A2540]">تسجيل حضور الحصة</h2>
+              </div>
+              <p className="mb-6 text-sm font-bold text-slate-500 leading-6">
+                أدخل الكود المكون من 4 أرقام الذي يظهر على الشاشة في السنتر لتسجيل حضورك تلقائياً في قاعدة البيانات.
+              </p>
+
+              <form onSubmit={handlePinSubmit} className="space-y-4">
+                <input
+                  type="text"
+                  maxLength={4}
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+                  placeholder="مثال: 4821"
+                  className="w-full text-center text-3xl font-mono tracking-widest rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 outline-none focus:border-[#D4AF37] focus:bg-white text-slate-900"
+                />
+
+                <button
+                  type="submit"
+                  disabled={isSubmittingPin || pin.trim().length !== 4}
+                  className="w-full rounded-2xl bg-[#0A2540] px-4 py-3.5 text-sm font-bold text-white transition-opacity disabled:opacity-50 hover:bg-[#123B66]"
+                >
+                  {isSubmittingPin ? 'جاري التحقق...' : 'تسجيل الحضور'}
+                </button>
+              </form>
+
+              {pinFeedback ? (
+                <div className={`mt-4 rounded-2xl border px-4 py-3 text-sm font-bold ${
+                  pinFeedback.type === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'
+                }`}>
+                  {pinFeedback.message}
+                </div>
+              ) : null}
+            </div>
           </div>
         );
     }

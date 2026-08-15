@@ -43,16 +43,28 @@ CREATE POLICY "Admins can update requests"
   WITH CHECK (public.is_admin_user());
 
 -- ==========================================
--- 2. teacher_student_groups table
+-- 2. teacher_student_groups table (ALTER)
 -- ==========================================
-CREATE TABLE IF NOT EXISTS public.teacher_student_groups (
-  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  teacher_id    uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-  student_id    uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-  subject       text NOT NULL DEFAULT '',      -- e.g. 'الفيزياء'
-  created_at    timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (teacher_id, student_id, subject)
-);
+ALTER TABLE public.teacher_student_groups ADD COLUMN IF NOT EXISTS subject text NOT NULL DEFAULT '';
+
+DO $$
+BEGIN
+  IF EXISTS (
+      SELECT 1 
+      FROM pg_constraint 
+      WHERE conname = 'teacher_student_groups_teacher_user_id_student_user_id_key'
+  ) THEN
+      ALTER TABLE public.teacher_student_groups DROP CONSTRAINT teacher_student_groups_teacher_user_id_student_user_id_key;
+  END IF;
+  
+  IF NOT EXISTS (
+      SELECT 1 
+      FROM pg_constraint 
+      WHERE conname = 'teacher_student_groups_teacher_student_subject_unique'
+  ) THEN
+      ALTER TABLE public.teacher_student_groups ADD CONSTRAINT teacher_student_groups_teacher_student_subject_unique UNIQUE (teacher_user_id, student_user_id, subject);
+  END IF;
+END $$;
 
 ALTER TABLE public.teacher_student_groups ENABLE ROW LEVEL SECURITY;
 
@@ -61,7 +73,7 @@ CREATE POLICY "Teachers can view their groups"
   ON public.teacher_student_groups FOR SELECT
   TO authenticated
   USING (
-    teacher_id IN (SELECT id FROM public.users WHERE auth_user_id = auth.uid())
+    teacher_user_id = auth.uid()
     OR public.is_admin_user()
   );
 
@@ -115,3 +127,50 @@ CREATE INDEX IF NOT EXISTS users_student_phone_idx ON public.users(student_phone
 GRANT ALL ON public.change_requests TO service_role;
 GRANT ALL ON public.teacher_student_groups TO service_role;
 GRANT ALL ON public.notifications TO service_role;
+
+-- ==========================================
+-- 5. Redefine issue_shared_attendance_token for 4-digit PIN
+-- ==========================================
+CREATE OR REPLACE FUNCTION public.issue_shared_attendance_token(
+  p_valid_for_seconds integer DEFAULT 300
+)
+RETURNS TABLE (
+  token text,
+  expires_at timestamptz
+)
+AS $$
+DECLARE
+  v_valid_seconds integer := greatest(5, least(coalesce(p_valid_for_seconds, 300), 7200));
+  v_token text;
+  v_expires_at timestamptz;
+BEGIN
+  IF NOT public.is_admin_user() THEN
+    RAISE EXCEPTION 'NOT_AUTHORIZED';
+  END IF;
+
+  -- Generate a random 4-digit PIN
+  v_token := lpad((floor(random() * 9000) + 1000)::int::text, 4, '0');
+  v_expires_at := now() + make_interval(secs => v_valid_seconds);
+
+  -- Delete previous active shared tokens to keep only one active PIN
+  DELETE FROM public.attendance_tokens WHERE shared = true;
+
+  INSERT INTO public.attendance_tokens (
+    shared,
+    token_hash,
+    pin_hash,
+    expires_at,
+    use_count
+  ) VALUES (
+    true,
+    encode(digest(v_token, 'sha256'), 'hex'),
+    NULL,
+    v_expires_at,
+    0
+  );
+
+  RETURN QUERY
+  SELECT v_token, v_expires_at;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+

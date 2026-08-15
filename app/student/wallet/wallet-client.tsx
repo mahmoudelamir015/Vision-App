@@ -66,9 +66,9 @@ export function StudentWalletClient({ studentName }: StudentWalletClientProps) {
   const balance = entries.reduce((total, entry) => total + entry.amount, 0);
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 font-cairo bg-slate-50 sm:p-6">
+    <div className="min-h-screen bg-white p-4 font-cairo sm:p-6">
       <div className="mx-auto max-w-4xl space-y-6">
-        <header className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white">
+        <header className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0A2540] text-white dark:bg-[#D4AF37] dark:text-[#0A2540]">
               <Wallet className="h-6 w-6" />
@@ -96,7 +96,7 @@ export function StudentWalletClient({ studentName }: StudentWalletClientProps) {
           />
         ) : (
           <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-            <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white">
+            <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-bold text-slate-500 text-slate-500">الرصيد الحالي</p>
@@ -118,7 +118,7 @@ export function StudentWalletClient({ studentName }: StudentWalletClientProps) {
                   entries.map((entry) => (
                     <article
                       key={entry.id ?? `${entry.created_at ?? "entry"}-${entry.amount}`}
-                      className="rounded-2xl border border-slate-200 bg-slate-50 p-4 border-slate-200 bg-slate-50"
+                      className="rounded-2xl border border-slate-200 bg-white p-4"
                     >
                       <div className="flex items-center justify-between gap-4">
                         <div>
@@ -141,18 +141,18 @@ export function StudentWalletClient({ studentName }: StudentWalletClientProps) {
               </div>
             </section>
 
-            <aside className="space-y-4 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white">
+            <aside className="space-y-4 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
               <h3 className="text-lg font-extrabold text-[#0A2540] text-[#0A2540]">حالة المحفظة</h3>
               <p className="text-sm font-bold leading-6 text-slate-500 text-slate-500">
                 البيانات هنا جاية مباشرة من Supabase مع تفعيل الحماية على مستوى الصفوف.
               </p>
-              <div className="rounded-2xl bg-slate-50 p-4 bg-slate-50">
-                <p className="text-xs font-bold text-slate-500 text-slate-500">عدد العمليات</p>
-                <p className="mt-1 text-2xl font-black text-[#0A2540] text-[#0A2540]">{entries.length}</p>
+              <div className="rounded-2xl bg-slate-50 p-4">
+                <p className="text-xs font-bold text-slate-500">عدد العمليات</p>
+                <p className="mt-1 text-2xl font-black text-[#0A2540]">{entries.length}</p>
               </div>
-              <div className="rounded-2xl bg-slate-50 p-4 bg-slate-50">
-                <p className="text-xs font-bold text-slate-500 text-slate-500">الطالب</p>
-                <p className="mt-1 text-lg font-extrabold text-[#0A2540] text-[#0A2540]">{studentName}</p>
+              <div className="rounded-2xl bg-slate-50 p-4">
+                <p className="text-xs font-bold text-slate-500">الطالب</p>
+                <p className="mt-1 text-lg font-extrabold text-[#0A2540]">{studentName}</p>
               </div>
             </aside>
           </div>

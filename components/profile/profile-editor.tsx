@@ -179,7 +179,7 @@ export function ProfileEditor({ role, title, description, showPhoto = false, edi
   const showLockedField = (field: ChangeRequestField, value: string | undefined) => {
     const displayValue = field === 'stage' ? formatStage(value) : (value || '-');
     return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 border-slate-200 bg-slate-50">
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
       <div className="flex items-center justify-between gap-3">
         <div>
           <div className="text-xs font-bold text-slate-500">{allowedFieldLabels[field]}</div>
@@ -188,7 +188,7 @@ export function ProfileEditor({ role, title, description, showPhoto = false, edi
         <button
           type="button"
           onClick={() => openRequestModal(field, displayValue === '-' ? '' : displayValue)}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540] border-slate-200 bg-white text-slate-700"
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540]"
         >
           <MessageSquareText className="h-4 w-4" />
           طلب تعديل
@@ -199,9 +199,9 @@ export function ProfileEditor({ role, title, description, showPhoto = false, edi
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 font-cairo bg-slate-50 sm:p-6">
+    <div className="min-h-screen bg-white p-4 font-cairo sm:p-6">
       <div className="mx-auto max-w-4xl space-y-6">
-        <header className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white">
+        <header className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0A2540] text-white dark:bg-[#D4AF37] dark:text-[#0A2540]">
               <UserCircle2 className="h-6 w-6" />
@@ -219,7 +219,7 @@ export function ProfileEditor({ role, title, description, showPhoto = false, edi
           </div>
         ) : null}
 
-        <form onSubmit={handleSave} className="space-y-4 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white">
+        <form onSubmit={handleSave} className="space-y-4 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
           {loading ? (
             <div className="flex items-center gap-3 text-sm font-bold text-slate-500">
               <CircleDashed className="h-5 w-5 animate-spin" />
@@ -232,7 +232,7 @@ export function ProfileEditor({ role, title, description, showPhoto = false, edi
                 <input
                   name="name"
                   defaultValue={profile.name ?? ''}
-                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 border-slate-200 bg-white"
+                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-850 focus:border-[#D4AF37]"
                 />
               </label>
 
@@ -242,7 +242,7 @@ export function ProfileEditor({ role, title, description, showPhoto = false, edi
                   <select
                     name="stage"
                     defaultValue={profile.stage ?? ''}
-                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 border-slate-200 bg-white"
+                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 focus:border-[#D4AF37]"
                   >
                     <option value="">اختر المرحلة</option>
                     <option value="primary">ابتدائي</option>
@@ -295,8 +295,8 @@ export function ProfileEditor({ role, title, description, showPhoto = false, edi
       </div>
 
       {requestOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <form onSubmit={submitChangeRequest} className="w-full max-w-xl rounded-[2rem] bg-white p-6 shadow-2xl bg-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 animate-fade-in">
+          <form onSubmit={submitChangeRequest} className="w-full max-w-xl rounded-[2rem] bg-white p-6 shadow-2xl">
             <h2 className="text-xl font-extrabold text-[#0A2540] text-[#0A2540]">طلب تعديل</h2>
             <p className="mt-1 text-sm font-bold text-slate-500">اطلب تعديل {allowedFieldLabels[requestField]} وارسل السبب للإدارة.</p>
             <div className="mt-4 space-y-4">
@@ -305,7 +305,7 @@ export function ProfileEditor({ role, title, description, showPhoto = false, edi
                 <input
                   value={requestValue}
                   onChange={(event) => setRequestValue(event.target.value)}
-                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 border-slate-200 bg-white"
+                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-[#D4AF37]"
                 />
               </label>
               <label className="block text-sm font-bold text-slate-700 text-slate-800">
@@ -313,7 +313,7 @@ export function ProfileEditor({ role, title, description, showPhoto = false, edi
                 <textarea
                   value={requestReason}
                   onChange={(event) => setRequestReason(event.target.value)}
-                  className="mt-2 h-28 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 border-slate-200 bg-white"
+                  className="mt-2 h-28 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-[#D4AF37]"
                 />
               </label>
             </div>
