@@ -39,19 +39,19 @@ export function QuestionCard({
           <span className="font-bold text-slate-400">سؤال {index + 1}</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            {onAddToBank ? (
-          <button
-            type="button"
-            onClick={() => onAddToBank(question.id)}
-            title="إضافة لبنك الأسئلة"
-            className="rounded-lg p-2 text-emerald-400 transition-colors hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-900/20"
-          >
-            <Plus className="h-5 w-5" />
-          </button>
+          {onAddToBank ? (
+            <button
+              type="button"
+              onClick={() => onAddToBank(question.id)}
+              title="إضافة لبنك الأسئلة"
+              className="rounded-lg p-2 text-emerald-400 transition-colors hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-900/20"
+            >
+              <Plus className="h-5 w-5" />
+            </button>
           ) : null}
-          onClick={() => onMove(index, 'up')}
+          <button
+            type="button"
+            onClick={() => onMove(index, 'up')}
             disabled={index === 0}
             className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 disabled:opacity-30 dark:hover:bg-slate-700 dark:hover:text-slate-200"
           >

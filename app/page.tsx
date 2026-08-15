@@ -239,7 +239,10 @@ export default function AuthPage() {
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();\n    setFormError(null);\n    setNotice(null);\n    setFieldErrors({});
+    event.preventDefault();
+    setFormError(null);
+    setNotice(null);
+    setFieldErrors({});
 
     try {
       const formData = new FormData(event.currentTarget);

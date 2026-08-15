@@ -330,5 +330,4 @@ export function ProfileEditor({ role, title, description, showPhoto = false, edi
       ) : null}
     </div>
   );
-  };
 }
