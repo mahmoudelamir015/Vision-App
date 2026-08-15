@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createRouteSupabaseClient } from "@/lib/supabase/server";
+import { createRouteSupabaseClientWithBufferedCookies } from "@/lib/supabase/server";
 
 export async function POST() {
-  const supabase = createRouteSupabaseClient(await cookies());
+  const { supabase, attachBufferedCookies } = createRouteSupabaseClientWithBufferedCookies(await cookies());
   await supabase.auth.signOut();
-  return NextResponse.json({ ok: true });
+  return attachBufferedCookies(NextResponse.json({ ok: true }));
 }

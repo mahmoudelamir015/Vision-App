@@ -1,8 +1,15 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { NextResponse } from "next/server";
 
 type WritableCookieStore = {
   getAll: () => Array<{ name: string; value: string }>;
   set: (name: string, value: string, options?: CookieOptions) => void;
+};
+
+type BufferedCookie = {
+  name: string;
+  value: string;
+  options?: CookieOptions;
 };
 
 function getConfig() {
@@ -30,4 +37,34 @@ export function createRouteSupabaseClient(cookieStore: WritableCookieStore) {
       },
     },
   });
+}
+
+export function createRouteSupabaseClientWithBufferedCookies(cookieStore: WritableCookieStore) {
+  const { url, key } = getConfig();
+  const bufferedCookies: BufferedCookie[] = [];
+
+  const supabase = createServerClient(url, key, {
+    cookies: {
+      getAll: () => cookieStore.getAll(),
+      setAll: (cookies) => {
+        bufferedCookies.push(...cookies);
+      },
+    },
+  });
+
+  const attachBufferedCookies = (response: NextResponse) => {
+    bufferedCookies.forEach(({ name, value, options }) => {
+      response.cookies.set(name, value, {
+        ...options,
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+      });
+    });
+
+    return response;
+  };
+
+  return { supabase, attachBufferedCookies };
 }

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { normalizeEgyptianPhone } from "@/lib/auth/phone";
 import { createServiceSupabaseClient } from "@/lib/supabase/admin";
-import { createRouteSupabaseClient } from "@/lib/supabase/server";
+import { createRouteSupabaseClientWithBufferedCookies } from "@/lib/supabase/server";
 
 const roles = new Set(["student", "parent", "teacher"]);
 
@@ -16,7 +16,9 @@ function parseString(value: unknown): string | null {
 }
 
 function parseStringArray(value: unknown): string[] {
-  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string").map((item) => item.trim()).filter(Boolean) : [];
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string").map((item) => item.trim()).filter(Boolean)
+    : [];
 }
 
 function getReadableSupabaseError(error: unknown) {
@@ -42,10 +44,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "البيانات غير مكتملة أو كلمة المرور أقل من 8 حروف" }, { status: 400 });
   }
 
-  const supabase = createRouteSupabaseClient(await cookies());
+  const cookieStore = await cookies();
+  const { supabase, attachBufferedCookies } = createRouteSupabaseClientWithBufferedCookies(cookieStore);
   const { data: settings } = await supabase.from("system_settings").select("registration_open").limit(1).maybeSingle();
   if (settings && !settings.registration_open) {
-    return NextResponse.json({ error: "التسجيل مغلق حالياً" }, { status: 403 });
+    return attachBufferedCookies(NextResponse.json({ error: "التسجيل مغلق حالياً" }, { status: 403 }));
   }
 
   const stage = parseString(body?.stage);
@@ -60,7 +63,7 @@ export async function POST(request: Request) {
   const subjects = parseStringArray(body?.subjects);
 
   if (role === "student" && parentPhone && parentPhone === phone) {
-    return NextResponse.json({ error: "رقم الطالب لازم يختلف عن رقم ولي الأمر" }, { status: 400 });
+    return attachBufferedCookies(NextResponse.json({ error: "رقم الطالب لازم يختلف عن رقم ولي الأمر" }, { status: 400 }));
   }
 
   const authEmail = makeAuthEmail(phone);
@@ -88,7 +91,7 @@ export async function POST(request: Request) {
   });
 
   if (signUpResult.error || !signUpResult.data.user) {
-    return NextResponse.json({ error: getReadableSupabaseError(signUpResult.error) }, { status: 400 });
+    return attachBufferedCookies(NextResponse.json({ error: getReadableSupabaseError(signUpResult.error) }, { status: 400 }));
   }
 
   const serviceSupabase = createServiceSupabaseClient();
@@ -117,8 +120,8 @@ export async function POST(request: Request) {
 
   if (profileError) {
     await serviceSupabase.auth.admin.deleteUser(signUpResult.data.user.id);
-    return NextResponse.json({ error: getReadableSupabaseError(profileError) }, { status: 400 });
+    return attachBufferedCookies(NextResponse.json({ error: getReadableSupabaseError(profileError) }, { status: 400 }));
   }
 
-  return NextResponse.json({ requiresPhoneVerification: !signUpResult.data.session, role });
+  return attachBufferedCookies(NextResponse.json({ requiresPhoneVerification: !signUpResult.data.session, role }));
 }

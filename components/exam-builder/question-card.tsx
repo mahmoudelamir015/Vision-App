@@ -12,6 +12,7 @@ type QuestionCardProps = {
   onMove: (index: number, direction: 'up' | 'down') => void;
   onAddOption: (id: string) => void;
   onRemoveOption: (id: string, optionIndex: number) => void;
+  onAddToBank?: (id: string) => void;
 };
 
 export function QuestionCard({
@@ -23,6 +24,7 @@ export function QuestionCard({
   onMove,
   onAddOption,
   onRemoveOption,
+  onAddToBank,
 }: QuestionCardProps) {
   const canEditOptions = question.type === 'mcq';
   const canRemoveOption = question.options.length > 2;
@@ -39,7 +41,17 @@ export function QuestionCard({
         <div className="flex items-center gap-1.5">
           <button
             type="button"
-            onClick={() => onMove(index, 'up')}
+            {onAddToBank ? (
+          <button
+            type="button"
+            onClick={() => onAddToBank(question.id)}
+            title="إضافة لبنك الأسئلة"
+            className="rounded-lg p-2 text-emerald-400 transition-colors hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-900/20"
+          >
+            <Plus className="h-5 w-5" />
+          </button>
+          ) : null}
+          onClick={() => onMove(index, 'up')}
             disabled={index === 0}
             className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 disabled:opacity-30 dark:hover:bg-slate-700 dark:hover:text-slate-200"
           >

@@ -43,7 +43,7 @@ export function DashboardShell({
   const isMobile = useIsMobile();
 
   return (
-    <div className="relative isolate flex min-h-screen overflow-x-hidden overflow-y-auto bg-slate-50 text-[#0A2540]" dir="rtl">
+    <div className="relative isolate flex min-h-screen overflow-x-hidden bg-slate-50 text-[#0A2540]" dir="rtl">
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="pointer-events-none absolute right-[-10%] top-[10%] h-[600px] w-[600px] rounded-full bg-[#D4AF37]/10 blur-[150px]" />
         <div className="pointer-events-none absolute left-[-10%] bottom-[20%] h-[500px] w-[500px] rounded-full bg-blue-500/10 blur-[120px]" />
@@ -137,7 +137,7 @@ export function DashboardShell({
         </div>
       </motion.aside>
 
-      <main className="relative z-20 flex h-screen flex-1 flex-col overflow-hidden">
+      <main className="relative z-20 flex min-h-screen flex-1 flex-col overflow-x-hidden">
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-black/5 bg-white/50 px-4 py-3 backdrop-blur-xl sm:px-5 sm:py-4 lg:px-8">
           <div className="flex items-center gap-4">
             <button
@@ -193,7 +193,7 @@ export function DashboardShell({
           </div>
         </header>
 
-        <div className="relative flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-4 lg:p-8">{children}</div>
+        <div className="relative flex-1 overflow-x-hidden p-3 pb-10 sm:p-4 sm:pb-12 lg:p-8">{children}</div>
       </main>
     </div>
   );

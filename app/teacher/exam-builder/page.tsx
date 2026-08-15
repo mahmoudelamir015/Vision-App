@@ -8,7 +8,7 @@ import { QuestionCard } from '@/components/exam-builder/question-card';
 import type { Question, QuestionType } from '@/components/exam-builder/types';
 import { triggerConfetti } from '@/lib/confetti';
 import { saveExamWithQuestions } from '@/lib/supabase/exams';
-import { fetchQuestionBank } from '@/lib/supabase/question-bank';
+import { fetchQuestionBank, saveQuestionBankQuestion } from '@/lib/supabase/question-bank';
 
 const EMPTY_QUESTION_BANK: Question[] = [];
 
@@ -132,6 +132,28 @@ export default function ExamBuilderPage() {
     }));
 
     setQuestions((current) => [...current, ...safeImports]);
+  };
+
+    const handleAddToBank = async (questionId: string) => {
+    const q = questions.find(x => x.id === questionId);
+    if (!q) return;
+    try {
+      await saveQuestionBankQuestion({
+        title: q.text.slice(0, 50) || 'بدون عنوان',
+        type: q.type,
+        text: q.text,
+        imageUrl: q.imageUrl,
+        options: q.options,
+        correctAnswer: q.correctAnswer,
+        explanation: q.explanation,
+        stage: selectedStage || undefined,
+        grade: selectedGrade || undefined,
+        published: true
+      });
+      alert('تمت إضافة السؤال لبنك الأسئلة بنجاح!');
+    } catch {
+      alert('فشل إضافة السؤال!');
+    }
   };
 
   const handleSaveExam = async () => {
@@ -388,6 +410,7 @@ export default function ExamBuilderPage() {
                 onMove={moveQuestion}
                 onAddOption={addQuestionOption}
                 onRemoveOption={removeQuestionOption}
+                onAddToBank={handleAddToBank}
               />
             ))}
 

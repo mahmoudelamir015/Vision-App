@@ -66,12 +66,14 @@ function Field({
   name,
   type = "text",
   placeholder,
+  error,
   children,
 }: {
   label: string;
   name: string;
   type?: string;
   placeholder?: string;
+  error?: string;
   children?: ReactNode;
 }) {
   return (
@@ -83,10 +85,15 @@ function Field({
             name={name}
             type={type}
             placeholder={placeholder}
-            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-[#0A2540] outline-none transition-all placeholder:text-slate-400 focus:border-[#D4AF37] focus:ring-4 focus:ring-[#D4AF37]/10"
+            className={`w-full rounded-2xl border bg-white px-4 py-3.5 text-[#0A2540] outline-none transition-all placeholder:text-slate-400 focus:ring-4 ${
+              error
+                ? "border-red-300 focus:border-red-400 focus:ring-red-400/10"
+                : "border-slate-200 focus:border-[#D4AF37] focus:ring-[#D4AF37]/10"
+            }`}
           />
         )}
       </div>
+      {error ? <p className="mt-1 text-xs font-semibold text-red-600">{error}</p> : null}
     </label>
   );
 }
@@ -99,12 +106,14 @@ function AnimatedSelect({
   placeholder,
   options,
   onChange,
+  error,
 }: {
   label: string;
   value: string;
   placeholder: string;
   options: SelectOption[];
   onChange: (value: string) => void;
+  error?: string;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -129,7 +138,11 @@ function AnimatedSelect({
           type="button"
           aria-expanded={open}
           onClick={() => setOpen((current) => !current)}
-          className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-right outline-none transition-all hover:border-slate-300 focus:border-[#D4AF37] focus:ring-4 focus:ring-[#D4AF37]/10"
+          className={`flex w-full items-center justify-between gap-3 rounded-2xl border bg-white px-4 py-3.5 text-right outline-none transition-all hover:border-slate-300 focus:ring-4 ${
+            error
+              ? "border-red-300 focus:border-red-400 focus:ring-red-400/10"
+              : "border-slate-200 focus:border-[#D4AF37] focus:ring-[#D4AF37]/10"
+          }`}
         >
           <span className={selectedLabel ? "text-[#0A2540]" : "text-slate-400"}>{selectedLabel || placeholder}</span>
           <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}>
@@ -168,6 +181,7 @@ function AnimatedSelect({
           ) : null}
         </AnimatePresence>
       </div>
+      {error ? <p className="mt-1 text-xs font-semibold text-red-600">{error}</p> : null}
     </label>
   );
 }
@@ -186,6 +200,7 @@ export default function AuthPage() {
   const [registrationOpen, setRegistrationOpen] = useState(true);
   const [formError, setFormError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     let mounted = true;
@@ -213,6 +228,7 @@ export default function AuthPage() {
   const resetSignupState = () => {
     setFormError(null);
     setNotice(null);
+    setFieldErrors({});
     setShowPassword(false);
     setStudentStage("");
     setStudentGrade("");
@@ -223,9 +239,7 @@ export default function AuthPage() {
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setFormError(null);
-    setNotice(null);
+    event.preventDefault();\n    setFormError(null);\n    setNotice(null);\n    setFieldErrors({});
 
     try {
       const formData = new FormData(event.currentTarget);
@@ -256,19 +270,40 @@ export default function AuthPage() {
       }
 
       if (role === "student") {
+        const errors: Record<string, string> = {};
+        const studentName = String(formData.get("student_name") ?? "").trim();
         const studentPhoneRaw = String(formData.get("student_phone") ?? "").trim();
         const parentPhoneRaw = String(formData.get("parent_phone") ?? "").trim();
+        const password = String(formData.get("student_password") ?? "").trim();
+
+        if (!studentName) errors.student_name = "يجب إدخال اسم الطالب";
         const studentPhone = normalizeEgyptianPhone(studentPhoneRaw);
-        const parentPhone = normalizeEgyptianPhone(parentPhoneRaw);
+        if (!studentPhone) errors.student_phone = "يجب إدخال رقم هاتف صحيح مكون من 11 رقم";
+        
+        const parentPhone = parentPhoneRaw ? normalizeEgyptianPhone(parentPhoneRaw) : null;
+        if (parentPhoneRaw && !parentPhone) errors.parent_phone = "يجب إدخال رقم هاتف صحيح مكون من 11 رقم";
+        
         if (studentPhone && parentPhone && studentPhone === parentPhone) {
-          throw new Error("رقم الطالب لازم يختلف عن رقم ولي الأمر");
+          errors.parent_phone = "رقم الطالب لازم يختلف عن رقم ولي الأمر";
+        }
+        
+        if (!studentStage) errors.studentStage = "اختر المرحلة الدراسية";
+        if (studentStage && !studentGrade) errors.studentGrade = "اختر الصف الدراسي";
+        if (studentStage === "secondary" && (studentGrade === "الصف الثالث الثانوي" || studentGrade === "الصف الثاني الثانوي") && !studentTrack) {
+          errors.studentTrack = "اختر القسم";
+        }
+        if (password.length < 8) errors.student_password = "كلمة المرور يجب أن تكون 8 أحرف على الأقل";
+
+        if (Object.keys(errors).length > 0) {
+          setFieldErrors(errors);
+          return;
         }
 
         const result = await authRequest<{ requiresPhoneVerification: boolean }>("/api/auth/sign-up", {
-          name: String(formData.get("student_name") ?? "").trim(),
+          name: studentName,
           phone: studentPhone ?? studentPhoneRaw,
           role: "student",
-          password: String(formData.get("student_password") ?? "").trim(),
+          password,
           stage: studentStage,
           grade: studentGrade,
           track: studentTrack,
@@ -284,15 +319,29 @@ export default function AuthPage() {
       }
 
       if (role === "parent") {
+        const errors: Record<string, string> = {};
+        const parentName = String(formData.get("parent_name") ?? "").trim();
         const parentPhoneRaw = String(formData.get("parent_phone") ?? "").trim();
+        const childName = String(formData.get("parent_child_name") ?? "").trim();
+        const password = String(formData.get("parent_password") ?? "").trim();
+
+        if (!parentName) errors.parent_name = "يجب إدخال اسم ولي الأمر";
         const normalizedParentPhone = normalizeEgyptianPhone(parentPhoneRaw);
+        if (!normalizedParentPhone) errors.parent_phone = "يجب إدخال رقم هاتف صحيح مكون من 11 رقم";
+        if (!childName) errors.parent_child_name = "يجب إدخال اسم الابن";
+        if (password.length < 8) errors.parent_password = "كلمة المرور يجب أن تكون 8 أحرف على الأقل";
+
+        if (Object.keys(errors).length > 0) {
+          setFieldErrors(errors);
+          return;
+        }
+
         const result = await authRequest<{ requiresPhoneVerification: boolean }>("/api/auth/sign-up", {
-          name: String(formData.get("parent_name") ?? "").trim(),
+          name: parentName,
           phone: normalizedParentPhone ?? parentPhoneRaw,
           role: "parent",
-          password: String(formData.get("parent_password") ?? "").trim(),
-          student_code: String(formData.get("parent_link_code") ?? "").trim() || undefined,
-          child_name: String(formData.get("parent_child_name") ?? "").trim(),
+          password,
+          child_name: childName,
         });
         if (result.requiresPhoneVerification) {
           setNotice("تم إرسال رمز تأكيد للهاتف. أكد الرقم ثم سجّل الدخول.");
@@ -303,12 +352,20 @@ export default function AuthPage() {
         return;
       }
 
+      const errors: Record<string, string> = {};
       const teacherName = String(formData.get("teacher_name") ?? "").trim();
       const teacherPhoneRaw = String(formData.get("teacher_phone") ?? "").trim();
       const teacherPhone = normalizeEgyptianPhone(teacherPhoneRaw);
       const teacherPassword = String(formData.get("teacher_password") ?? "").trim();
-      if (!teacherName || !teacherPhoneRaw || !teacherPhone || teacherPassword.length < 8) {
-        throw new Error("من فضلك اكتب الاسم ورقم الهاتف المصري الصحيح وكلمة مرور مكونة من 8 أحرف على الأقل.");
+
+      if (!teacherName) errors.teacher_name = "يجب إدخال اسم المعلم";
+      if (!teacherPhone) errors.teacher_phone = "يجب إدخال رقم هاتف صحيح مكون من 11 رقم";
+      if (!teacherStage) errors.teacherStage = "اختر المرحلة الدراسية";
+      if (teacherPassword.length < 8) errors.teacher_password = "كلمة المرور يجب أن تكون 8 أحرف على الأقل";
+
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors);
+        return;
       }
 
       const result = await authRequest<{ requiresPhoneVerification: boolean }>("/api/auth/sign-up", {
@@ -322,7 +379,7 @@ export default function AuthPage() {
           .split(",")
           .map((item) => item.trim())
           .filter(Boolean),
-        profile_image: teacherPhotoName ?? undefined,
+        profile_image: teacherPhotoPreview ?? undefined,
       });
       if (result.requiresPhoneVerification) {
         setNotice("تم إرسال رمز تأكيد للهاتف. أكد الرقم ثم سجّل الدخول.");
@@ -446,9 +503,9 @@ export default function AuthPage() {
                     transition={{ duration: 0.22 }}
                     className="space-y-4"
                   >
-                    <Field label="اسم الطالب" name="student_name" placeholder="اكتب اسم الطالب" />
-                    <Field label="رقم الهاتف" name="student_phone" placeholder="01X XXXX XXXX" />
-                    <Field label="رقم ولي الأمر" name="parent_phone" placeholder="01X XXXX XXXX" />
+                    <Field label="اسم الطالب" name="student_name" placeholder="اكتب اسم الطالب" error={fieldErrors.student_name} />
+                    <Field label="رقم الهاتف" name="student_phone" placeholder="01X XXXX XXXX" error={fieldErrors.student_phone} />
+                    <Field label="رقم ولي الأمر" name="parent_phone" placeholder="01X XXXX XXXX" error={fieldErrors.parent_phone} />
                     <AnimatedSelect
                       label="المرحلة الدراسية"
                       value={studentStage}
@@ -460,6 +517,7 @@ export default function AuthPage() {
                         setStudentGrade("");
                         setStudentTrack("");
                       }}
+                      error={fieldErrors.studentStage}
                     />
                     {studentStage ? (
                       <AnimatedSelect
@@ -468,15 +526,26 @@ export default function AuthPage() {
                         placeholder="اختر الصف"
                         options={stageGrades[studentStage].map((grade) => ({ value: grade, label: grade }))}
                         onChange={setStudentGrade}
+                        error={fieldErrors.studentGrade}
                       />
                     ) : null}
-                    {studentStage === "secondary" && (studentGrade === "الصف الثاني الثانوي" || studentGrade === "الصف الثالث الثانوي") ? (
+                    {studentStage === "secondary" && studentGrade === "الصف الثالث الثانوي" ? (
                       <AnimatedSelect
                         label="القسم"
                         value={studentTrack}
-                        placeholder="اختر القسم"
+                        placeholder="اختر القسم (أدبي/علمي علوم/علمي رياضة)"
                         options={secondaryTracks}
                         onChange={(nextTrack) => setStudentTrack(nextTrack as SecondaryTrack)}
+                        error={fieldErrors.studentTrack}
+                      />
+                    ) : studentStage === "secondary" && studentGrade === "الصف الثاني الثانوي" ? (
+                      <AnimatedSelect
+                        label="القسم"
+                        value={studentTrack}
+                        placeholder="اختر القسم (أدبي/علمي)"
+                        options={secondaryTracks.filter(t => t.value !== 'math').map(t => t.value === 'science' ? { ...t, label: 'علمي' } : t)}
+                        onChange={(nextTrack) => setStudentTrack(nextTrack as SecondaryTrack)}
+                        error={fieldErrors.studentTrack}
                       />
                     ) : null}
                     <label className="block text-sm font-bold text-[#0A2540]">
@@ -497,6 +566,7 @@ export default function AuthPage() {
                           {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                         </button>
                       </div>
+                      {fieldErrors.student_password ? <p className="mt-1 text-xs font-semibold text-red-600">{fieldErrors.student_password}</p> : null}
                     </label>
                   </motion.div>
                 ) : null}
@@ -510,10 +580,9 @@ export default function AuthPage() {
                     transition={{ duration: 0.22 }}
                     className="space-y-4"
                   >
-                    <Field label="اسم ولي الأمر" name="parent_name" placeholder="الاسم الكامل" />
-                    <Field label="رقم الهاتف" name="parent_phone" placeholder="01X XXXX XXXX" />
-                    <Field label="كود الطالب للربط" name="parent_link_code" placeholder="VIS-12345" />
-                    <Field label="اسم الابن" name="parent_child_name" placeholder="اسم الابن الكامل" />
+                    <Field label="اسم ولي الأمر" name="parent_name" placeholder="الاسم الكامل" error={fieldErrors.parent_name} />
+                    <Field label="رقم الهاتف" name="parent_phone" placeholder="01X XXXX XXXX" error={fieldErrors.parent_phone} />
+                    <Field label="اسم الابن" name="parent_child_name" placeholder="اسم الابن الكامل" error={fieldErrors.parent_child_name} />
                     <label className="block text-sm font-bold text-[#0A2540]">
                       كلمة المرور
                       <div className="relative mt-1">
@@ -532,6 +601,7 @@ export default function AuthPage() {
                           {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                         </button>
                       </div>
+                      {fieldErrors.parent_password ? <p className="mt-1 text-xs font-semibold text-red-600">{fieldErrors.parent_password}</p> : null}
                     </label>
                   </motion.div>
                 ) : null}
@@ -545,17 +615,18 @@ export default function AuthPage() {
                     transition={{ duration: 0.22 }}
                     className="space-y-4"
                   >
-                    <Field label="اسم المعلم" name="teacher_name" placeholder="اكتب اسمك" />
-                    <Field label="رقم الهاتف" name="teacher_phone" placeholder="01X XXXX XXXX" />
+                    <Field label="اسم المعلم" name="teacher_name" placeholder="اكتب اسمك" error={fieldErrors.teacher_name} />
+                    <Field label="رقم الهاتف" name="teacher_phone" placeholder="01X XXXX XXXX" error={fieldErrors.teacher_phone} />
                     <AnimatedSelect
                       label="المرحلة الدراسية"
                       value={teacherStage}
                       placeholder="اختر المرحلة"
                       options={teacherStages}
                       onChange={(nextStage) => setTeacherStage(nextStage as TeacherStage)}
+                      error={fieldErrors.teacherStage}
                     />
-                    <Field label="المواد" name="teacher_subjects" placeholder="مثال: الرياضيات, الفيزياء" />
-                    <Field label="اسم المدرسة" name="teacher_school" placeholder="اسم المدرسة" />
+                    <Field label="المواد" name="teacher_subjects" placeholder="مثال: الرياضيات, الفيزياء" error={fieldErrors.teacher_subjects} />
+                    <Field label="اسم المدرسة" name="teacher_school" placeholder="اسم المدرسة" error={fieldErrors.teacher_school} />
                     <OptionalPhotoPicker
                       label="صورة اختيارية"
                       description="اختياري تماماً، ويمكنك إكمال التسجيل بدون صورة."
@@ -585,6 +656,7 @@ export default function AuthPage() {
                           {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                         </button>
                       </div>
+                      {fieldErrors.teacher_password ? <p className="mt-1 text-xs font-semibold text-red-600">{fieldErrors.teacher_password}</p> : null}
                     </label>
                   </motion.div>
                 ) : null}

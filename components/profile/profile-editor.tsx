@@ -168,16 +168,26 @@ export function ProfileEditor({ role, title, description, showPhoto = false, edi
     }
   };
 
-  const showLockedField = (field: ChangeRequestField, value: string | undefined) => (
+  const formatStage = (val?: string) => {
+    switch(val) {
+      case 'primary': return 'ابتدائي';
+      case 'prep': return 'إعدادي';
+      case 'secondary': return 'ثانوي';
+      default: return val || '-';
+    }
+  };
+  const showLockedField = (field: ChangeRequestField, value: string | undefined) => {
+    const displayValue = field === 'stage' ? formatStage(value) : (value || '-');
+    return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-white/10 dark:bg-white/5">
       <div className="flex items-center justify-between gap-3">
         <div>
           <div className="text-xs font-bold text-slate-500">{allowedFieldLabels[field]}</div>
-          <div className="mt-1 text-sm font-bold text-slate-700 dark:text-slate-200">{value || '-'}</div>
+          <div className="mt-1 text-sm font-bold text-slate-700 dark:text-slate-200">{displayValue}</div>
         </div>
         <button
           type="button"
-          onClick={() => openRequestModal(field, value || '')}
+          onClick={() => openRequestModal(field, displayValue === '-' ? '' : displayValue)}
           className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540] dark:border-white/10 dark:bg-black/20 dark:text-slate-300"
         >
           <MessageSquareText className="h-4 w-4" />
@@ -186,6 +196,7 @@ export function ProfileEditor({ role, title, description, showPhoto = false, edi
       </div>
     </div>
   );
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 font-cairo dark:bg-slate-950 sm:p-6">
@@ -319,4 +330,5 @@ export function ProfileEditor({ role, title, description, showPhoto = false, edi
       ) : null}
     </div>
   );
+  };
 }
