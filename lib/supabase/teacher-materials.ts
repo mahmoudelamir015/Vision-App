@@ -8,6 +8,7 @@ export type TeacherMaterialRecord = {
   file_url: string;
   file_name?: string | null;
   file_type?: string | null;
+  subject?: string | null;
   price: number;
   published?: boolean;
   created_at?: string;
@@ -31,6 +32,7 @@ const normalizeTeacherMaterial = (record: SupabaseRecord | null): TeacherMateria
     file_url: fileUrl,
     file_name: typeof record.file_name === "string" ? record.file_name : null,
     file_type: typeof record.file_type === "string" ? record.file_type : null,
+    subject: typeof record.subject === "string" ? record.subject : null,
     price: typeof record.price === "number" ? record.price : Number(record.price ?? 0),
     published: typeof record.published === "boolean" ? record.published : Boolean(record.published),
     created_at: typeof record.created_at === "string" ? record.created_at : undefined,
@@ -66,6 +68,7 @@ export async function createTeacherMaterial(input: TeacherMaterialRecord): Promi
     file_url: input.file_url,
     file_name: input.file_name ?? null,
     file_type: input.file_type ?? null,
+    subject: input.subject ?? null,
     price: input.price ?? 0,
     published: input.published ?? true,
   };

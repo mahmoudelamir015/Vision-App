@@ -27,11 +27,13 @@ type Props = {
 
 type UploadFormState = {
   title: string;
+  subject: string;
   price: string;
 };
 
 const initialFormState: UploadFormState = {
   title: "",
+  subject: "",
   price: "0",
 };
 
@@ -202,6 +204,7 @@ export default function TeacherContentClient({ teacherId, teacherName }: Props) 
         file_url: publicUrlData.publicUrl,
         file_name: selectedFile.name,
         file_type: selectedFile.type || null,
+        subject: form.subject.trim() || null,
         price: Number(form.price || 0),
         published: true,
       });
@@ -359,6 +362,13 @@ export default function TeacherContentClient({ teacherId, teacherName }: Props) 
                 value={form.title}
                 onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
                 placeholder="اسم المحتوى"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+              />
+
+              <input
+                value={form.subject}
+                onChange={(event) => setForm((current) => ({ ...current, subject: event.target.value }))}
+                placeholder="المادة (مثال: فيزياء، كيمياء) — اتركه فارغاً لعرضه للكل"
                 className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
               />
 

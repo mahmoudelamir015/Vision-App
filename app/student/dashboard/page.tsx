@@ -33,6 +33,7 @@ export default function StudentDashboard() {
     grade?: string;
     track?: string;
     student_code?: string;
+    subjects?: string[];
   } | null>(null);
   const [notifyStage, setNotifyStage] = useState('');
   const [notifyGrade, setNotifyGrade] = useState('');
@@ -215,37 +216,70 @@ export default function StudentDashboard() {
     switch (activeTab) {
       case 'my-teachers':
         return teachers.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2">
-            {teachers.map((teacher) => (
-              <div
-                key={teacher.id ?? teacher.phone}
-                className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#D4AF37] dark:border-white/10 dark:bg-white/5"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="text-lg font-extrabold text-[#0A2540] dark:text-white">{teacher.name}</h3>
-                    <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">{teacher.school_name ?? 'مدرسة غير محددة'}</p>
-                  </div>
-                  <GraduationCap className="h-6 w-6 text-[#D4AF37]" />
-                </div>
-                <div className="mt-4 grid gap-2 text-sm font-bold text-slate-600 dark:text-slate-300">
-                  <div className="rounded-2xl bg-slate-50 px-3 py-2 dark:bg-black/20">المرحلة: {teacher.stage ?? '-'}</div>
-                  <div className="rounded-2xl bg-slate-50 px-3 py-2 dark:bg-black/20">الصف: {teacher.grade ?? '-'}</div>
-                  <div className="rounded-2xl bg-slate-50 px-3 py-2 dark:bg-black/20">القسم: {teacher.track ?? '-'}</div>
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold text-slate-500 dark:text-slate-400">
-                  {teacher.subjects?.length ? (
-                    teacher.subjects.map((subject) => (
-                      <span key={subject} className="rounded-full bg-slate-100 px-3 py-1 dark:bg-white/5">
-                        {subject}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-white/5">لا توجد مواد مسجلة</span>
-                  )}
+          <div className="space-y-4">
+            {/* Student allowed subjects banner */}
+            {studentProfile?.subjects && studentProfile.subjects.length > 0 ? (
+              <div className="rounded-2xl border border-[#D4AF37]/30 bg-amber-50 px-5 py-4 dark:bg-amber-900/20">
+                <p className="text-xs font-extrabold uppercase tracking-widest text-amber-700 dark:text-amber-400">المواد المخصصة لك</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {studentProfile.subjects.map((s) => (
+                    <span key={s} className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800 dark:bg-amber-800/40 dark:text-amber-200">{s}</span>
+                  ))}
                 </div>
               </div>
-            ))}
+            ) : (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm font-bold text-slate-500 dark:border-white/10 dark:bg-white/5">
+                ليس لديك مواد مخصصة — يمكنك مشاهدة محتوى كل المواد.
+              </div>
+            )}
+
+            <div className="grid gap-4 md:grid-cols-2">
+              {teachers.map((teacher) => (
+                <div
+                  key={teacher.id ?? teacher.phone}
+                  className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#D4AF37] dark:border-white/10 dark:bg-white/5"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-lg font-extrabold text-[#0A2540] dark:text-white">{teacher.name}</h3>
+                      <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">{teacher.school_name ?? 'مدرسة غير محددة'}</p>
+                    </div>
+                    <GraduationCap className="h-6 w-6 text-[#D4AF37]" />
+                  </div>
+                  <div className="mt-4 grid gap-2 text-sm font-bold text-slate-600 dark:text-slate-300">
+                    <div className="rounded-2xl bg-slate-50 px-3 py-2 dark:bg-black/20">المرحلة: {teacher.stage ?? '-'}</div>
+                    <div className="rounded-2xl bg-slate-50 px-3 py-2 dark:bg-black/20">الصف: {teacher.grade ?? '-'}</div>
+                    <div className="rounded-2xl bg-slate-50 px-3 py-2 dark:bg-black/20">القسم: {teacher.track ?? '-'}</div>
+                  </div>
+                  <div className="mt-4">
+                    <p className="mb-2 text-xs font-extrabold text-slate-500 dark:text-slate-400">مواد المدرس:</p>
+                    <div className="flex flex-wrap gap-2 text-xs font-bold">
+                      {teacher.subjects?.length ? (
+                        teacher.subjects.map((subject) => {
+                          // highlight subject if it's in student's allowed list
+                          const allowed = !studentProfile?.subjects?.length ||
+                            studentProfile.subjects.some(s => s.trim().toLowerCase() === subject.trim().toLowerCase());
+                          return (
+                            <span
+                              key={subject}
+                              className={`rounded-full px-3 py-1 ${
+                                allowed
+                                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-800/30 dark:text-emerald-300'
+                                  : 'bg-slate-100 text-slate-400 line-through dark:bg-white/5 dark:text-slate-600'
+                              }`}
+                            >
+                              {subject}
+                            </span>
+                          );
+                        })
+                      ) : (
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-500 dark:bg-white/5">لا توجد مواد مسجلة</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
           <EmptyState
