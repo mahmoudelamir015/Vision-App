@@ -66,16 +66,16 @@ export function StudentWalletClient({ studentName }: StudentWalletClientProps) {
   const balance = entries.reduce((total, entry) => total + entry.amount, 0);
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 font-cairo dark:bg-slate-950 sm:p-6">
+    <div className="min-h-screen bg-slate-50 p-4 font-cairo bg-slate-50 sm:p-6">
       <div className="mx-auto max-w-4xl space-y-6">
-        <header className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
+        <header className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0A2540] text-white dark:bg-[#D4AF37] dark:text-[#0A2540]">
               <Wallet className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-extrabold text-[#0A2540] dark:text-white">المحفظة</h1>
-              <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">
+              <h1 className="text-2xl font-extrabold text-[#0A2540] text-[#0A2540]">المحفظة</h1>
+              <p className="mt-1 text-sm font-bold text-slate-500 text-slate-500">
                 {isLoading
                   ? "جارٍ تحميل بيانات المحفظة..."
                   : walletEnabled
@@ -96,11 +96,11 @@ export function StudentWalletClient({ studentName }: StudentWalletClientProps) {
           />
         ) : (
           <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-            <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
+            <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-bold text-slate-500 dark:text-slate-400">الرصيد الحالي</p>
-                  <h2 className="mt-1 text-3xl font-black text-[#0A2540] dark:text-white">{formatAmount(balance)}</h2>
+                  <p className="text-sm font-bold text-slate-500 text-slate-500">الرصيد الحالي</p>
+                  <h2 className="mt-1 text-3xl font-black text-[#0A2540] text-[#0A2540]">{formatAmount(balance)}</h2>
                 </div>
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0A2540]/5 text-[#0A2540] dark:bg-[#D4AF37]/15 dark:text-[#D4AF37]">
                   <CreditCard className="h-7 w-7" />
@@ -118,12 +118,12 @@ export function StudentWalletClient({ studentName }: StudentWalletClientProps) {
                   entries.map((entry) => (
                     <article
                       key={entry.id ?? `${entry.created_at ?? "entry"}-${entry.amount}`}
-                      className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/5"
+                      className="rounded-2xl border border-slate-200 bg-slate-50 p-4 border-slate-200 bg-slate-50"
                     >
                       <div className="flex items-center justify-between gap-4">
                         <div>
-                          <h3 className="text-base font-extrabold text-[#0A2540] dark:text-white">{entry.owner}</h3>
-                          <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">
+                          <h3 className="text-base font-extrabold text-[#0A2540] text-[#0A2540]">{entry.owner}</h3>
+                          <p className="mt-1 text-sm font-bold text-slate-500 text-slate-500">
                             {entry.reason || entry.account_type}
                           </p>
                         </div>
@@ -141,18 +141,18 @@ export function StudentWalletClient({ studentName }: StudentWalletClientProps) {
               </div>
             </section>
 
-            <aside className="space-y-4 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
-              <h3 className="text-lg font-extrabold text-[#0A2540] dark:text-white">حالة المحفظة</h3>
-              <p className="text-sm font-bold leading-6 text-slate-500 dark:text-slate-400">
+            <aside className="space-y-4 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white">
+              <h3 className="text-lg font-extrabold text-[#0A2540] text-[#0A2540]">حالة المحفظة</h3>
+              <p className="text-sm font-bold leading-6 text-slate-500 text-slate-500">
                 البيانات هنا جاية مباشرة من Supabase مع تفعيل الحماية على مستوى الصفوف.
               </p>
-              <div className="rounded-2xl bg-slate-50 p-4 dark:bg-white/5">
-                <p className="text-xs font-bold text-slate-500 dark:text-slate-400">عدد العمليات</p>
-                <p className="mt-1 text-2xl font-black text-[#0A2540] dark:text-white">{entries.length}</p>
+              <div className="rounded-2xl bg-slate-50 p-4 bg-slate-50">
+                <p className="text-xs font-bold text-slate-500 text-slate-500">عدد العمليات</p>
+                <p className="mt-1 text-2xl font-black text-[#0A2540] text-[#0A2540]">{entries.length}</p>
               </div>
-              <div className="rounded-2xl bg-slate-50 p-4 dark:bg-white/5">
-                <p className="text-xs font-bold text-slate-500 dark:text-slate-400">الطالب</p>
-                <p className="mt-1 text-lg font-extrabold text-[#0A2540] dark:text-white">{studentName}</p>
+              <div className="rounded-2xl bg-slate-50 p-4 bg-slate-50">
+                <p className="text-xs font-bold text-slate-500 text-slate-500">الطالب</p>
+                <p className="mt-1 text-lg font-extrabold text-[#0A2540] text-[#0A2540]">{studentName}</p>
               </div>
             </aside>
           </div>

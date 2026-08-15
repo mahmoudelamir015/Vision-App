@@ -100,10 +100,10 @@ export default function TeacherContentClient({ teacherId, teacherName }: Props) 
   const totalRevenue = useMemo(() => materials.reduce((sum, item) => sum + Number(item.price || 0), 0), [materials]);
 
   const notificationsPanel = (
-    <div className="border-b border-slate-100 bg-slate-50/80 p-4 dark:border-white/5 dark:bg-black/20">
+    <div className="border-b border-slate-100 bg-slate-50/80 p-4 border-slate-200 bg-white">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-bold text-[#0A2540] dark:text-white">الإشعارات</h3>
-        <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-white/10 dark:text-slate-300">
+        <h3 className="text-sm font-bold text-[#0A2540] text-[#0A2540]">الإشعارات</h3>
+        <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-600 bg-slate-100 text-slate-700">
           {notifications.length} جديدة
         </span>
       </div>
@@ -111,9 +111,9 @@ export default function TeacherContentClient({ teacherId, teacherName }: Props) 
       {notifications.length > 0 ? (
         <div className="space-y-3">
           {notifications.slice(0, 3).map((notification) => (
-            <div key={notification.id ?? notification.title} className="rounded-2xl bg-white p-4 shadow-sm dark:bg-slate-900">
-              <h4 className="text-sm font-extrabold text-[#0A2540] dark:text-white">{notification.title}</h4>
-              <p className="mt-1 text-xs font-medium leading-5 text-slate-500 dark:text-slate-400">{notification.body}</p>
+            <div key={notification.id ?? notification.title} className="rounded-2xl bg-white p-4 shadow-sm bg-white">
+              <h4 className="text-sm font-extrabold text-[#0A2540] text-[#0A2540]">{notification.title}</h4>
+              <p className="mt-1 text-xs font-medium leading-5 text-slate-500 text-slate-500">{notification.body}</p>
             </div>
           ))}
         </div>
@@ -134,7 +134,7 @@ export default function TeacherContentClient({ teacherId, teacherName }: Props) 
       </div>
       <div className="flex flex-col pl-4">
         <span className="text-sm font-extrabold leading-tight text-[#0A2540] dark:text-[#D4AF37]">المعلم</span>
-        <span className="mt-0.5 text-[10px] font-bold text-slate-500 dark:text-slate-400">لوحة المحتوى التعليمي</span>
+        <span className="mt-0.5 text-[10px] font-bold text-slate-500 text-slate-500">لوحة المحتوى التعليمي</span>
       </div>
     </>
   );
@@ -232,27 +232,27 @@ export default function TeacherContentClient({ teacherId, teacherName }: Props) 
   const content = (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/5">
-          <p className="text-sm font-bold text-slate-500 dark:text-slate-400">إجمالي الملفات</p>
-          <h3 className="mt-2 text-3xl font-black text-[#0A2540] dark:text-white">{materials.length}</h3>
+        <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-slate-50">
+          <p className="text-sm font-bold text-slate-500 text-slate-500">إجمالي الملفات</p>
+          <h3 className="mt-2 text-3xl font-black text-[#0A2540] text-[#0A2540]">{materials.length}</h3>
         </div>
-        <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/5">
-          <p className="text-sm font-bold text-slate-500 dark:text-slate-400">إجمالي القيمة</p>
-          <h3 className="mt-2 text-3xl font-black text-[#0A2540] dark:text-white">{formatPrice(totalRevenue)}</h3>
+        <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-slate-50">
+          <p className="text-sm font-bold text-slate-500 text-slate-500">إجمالي القيمة</p>
+          <h3 className="mt-2 text-3xl font-black text-[#0A2540] text-[#0A2540]">{formatPrice(totalRevenue)}</h3>
         </div>
-        <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/5">
-          <p className="text-sm font-bold text-slate-500 dark:text-slate-400">الحالة</p>
-          <h3 className="mt-2 text-2xl font-extrabold text-[#0A2540] dark:text-white">
+        <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-slate-50">
+          <p className="text-sm font-bold text-slate-500 text-slate-500">الحالة</p>
+          <h3 className="mt-2 text-2xl font-extrabold text-[#0A2540] text-[#0A2540]">
             {isLoadingSettings ? "جاري التحميل..." : walletEnabled ? "المحتوى جاهز للعرض" : "المزامنة متوقفة"}
           </h3>
         </div>
       </div>
 
-      <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/5">
+      <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-slate-50">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h3 className="text-xl font-extrabold text-[#0A2540] dark:text-white">المحتوى التعليمي</h3>
-            <p className="mt-2 text-sm font-bold text-slate-500 dark:text-slate-400">
+            <h3 className="text-xl font-extrabold text-[#0A2540] text-[#0A2540]">المحتوى التعليمي</h3>
+            <p className="mt-2 text-sm font-bold text-slate-500 text-slate-500">
               أضف ملفات PDF أو Word وحدد سعرها قبل النشر على المنصة.
             </p>
           </div>
@@ -269,11 +269,11 @@ export default function TeacherContentClient({ teacherId, teacherName }: Props) 
         {materials.length > 0 ? (
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             {materials.map((material) => (
-              <div key={material.id ?? material.file_url} className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5 dark:border-white/10 dark:bg-black/20">
+              <div key={material.id ?? material.file_url} className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5 border-slate-200 bg-white">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <h4 className="text-lg font-extrabold text-[#0A2540] dark:text-white">{material.title}</h4>
-                    <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">
+                    <h4 className="text-lg font-extrabold text-[#0A2540] text-[#0A2540]">{material.title}</h4>
+                    <p className="mt-1 text-sm font-bold text-slate-500 text-slate-500">
                       {material.file_name ?? "ملف مرفوع"} {material.file_type ? `• ${material.file_type}` : ""}
                     </p>
                   </div>
@@ -288,7 +288,7 @@ export default function TeacherContentClient({ teacherId, teacherName }: Props) 
                     href={material.file_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-[#0A2540] transition-colors hover:border-[#D4AF37] hover:text-[#D4AF37] dark:border-white/10 dark:bg-white/5 dark:text-white sm:w-auto"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-[#0A2540] transition-colors hover:border-[#D4AF37] hover:text-[#D4AF37] border-slate-200 bg-slate-50 text-[#0A2540] sm:w-auto"
                   >
                     <ExternalLink className="h-4 w-4" />
                     فتح الملف
@@ -340,18 +340,18 @@ export default function TeacherContentClient({ teacherId, teacherName }: Props) 
 
       {isModalOpen ? (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-2xl flex-col gap-4 overflow-y-auto rounded-[2rem] border border-slate-200 bg-white p-5 shadow-2xl sm:p-6 dark:border-white/10 dark:bg-[#0A2540]">
+          <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-2xl flex-col gap-4 overflow-y-auto rounded-[2rem] border border-slate-200 bg-white p-5 shadow-2xl sm:p-6 border-slate-200 dark:bg-[#0A2540]">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">رفع محتوى جديد</h2>
-                <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">
+                <h2 className="text-xl font-extrabold text-[#0A2540] text-[#0A2540]">رفع محتوى جديد</h2>
+                <p className="mt-1 text-sm font-bold text-slate-500 text-slate-500">
                   اكتب اسم المحتوى، اختار الملف، وحدد السعر قبل الحفظ.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 sm:w-auto"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 border-slate-200 bg-slate-50 text-slate-700 sm:w-auto"
               >
                 إغلاق
               </button>
@@ -362,21 +362,21 @@ export default function TeacherContentClient({ teacherId, teacherName }: Props) 
                 value={form.title}
                 onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
                 placeholder="اسم المحتوى"
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
               />
 
               <input
                 value={form.subject}
                 onChange={(event) => setForm((current) => ({ ...current, subject: event.target.value }))}
                 placeholder="المادة (مثال: فيزياء، كيمياء) — اتركه فارغاً لعرضه للكل"
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
               />
 
               <input
                 type="file"
                 accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none file:mr-4 file:rounded-lg file:border-0 file:bg-[#0A2540] file:px-4 file:py-2 file:font-bold file:text-white dark:border-white/10 dark:bg-black/20"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none file:mr-4 file:rounded-lg file:border-0 file:bg-[#0A2540] file:px-4 file:py-2 file:font-bold file:text-white border-slate-200 bg-white"
               />
 
               <input
@@ -385,11 +385,11 @@ export default function TeacherContentClient({ teacherId, teacherName }: Props) 
                 value={form.price}
                 onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))}
                 placeholder="السعر"
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
               />
 
               {selectedFile ? (
-                <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-bold text-slate-600 dark:bg-white/5 dark:text-slate-300">
+                <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-bold text-slate-600 bg-slate-50 text-slate-700">
                   الملف المختار: {selectedFile.name}
                 </div>
               ) : null}
@@ -398,7 +398,7 @@ export default function TeacherContentClient({ teacherId, teacherName }: Props) 
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-500 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540] dark:border-white/10 dark:text-slate-300 sm:w-auto"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-500 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540] border-slate-200 text-slate-700 sm:w-auto"
                 >
                   إلغاء
                 </button>

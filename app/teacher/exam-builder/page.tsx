@@ -201,12 +201,12 @@ export default function ExamBuilderPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 font-cairo dark:bg-slate-950 sm:p-8">
+    <div className="min-h-screen bg-slate-50 p-4 font-cairo bg-slate-50 sm:p-8">
       <div className="mx-auto max-w-6xl space-y-6">
-        <header className="flex flex-col items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800 sm:flex-row sm:items-center">
+        <header className="flex flex-col items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white sm:flex-row sm:items-center">
           <div>
-            <h1 className="text-2xl font-bold text-vision-navy dark:text-vision-gold">بناء الامتحان</h1>
-            <p className="mt-1 text-slate-500 dark:text-slate-400">
+            <h1 className="text-2xl font-bold text-vision-navy text-[#D4AF37]">بناء الامتحان</h1>
+            <p className="mt-1 text-slate-500 text-slate-500">
               أنشئ الامتحان، اختار المرحلة والصف، وحدد مجاني او مدفوع ثم احفظه في قاعدة البيانات.
             </p>
           </div>
@@ -214,7 +214,7 @@ export default function ExamBuilderPage() {
             <button
               type="button"
               onClick={() => window.history.back()}
-              className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 font-bold text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+              className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 font-bold text-slate-700 transition-all duration-300 ease-in-out hover:bg-slate-100 hover:shadow-md hover:-translate-y-0.5 border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
             >
               <ChevronLeft className="h-5 w-5 rtl:rotate-180" />
               رجوع
@@ -222,7 +222,7 @@ export default function ExamBuilderPage() {
             <button
               type="button"
               onClick={() => setIsBankOpen(true)}
-              className="flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-2.5 font-bold text-slate-700 transition-colors hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
+              className="flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-2.5 font-bold text-slate-700 transition-colors hover:bg-slate-200 dark:bg-slate-700 text-slate-700 hover:bg-slate-100"
             >
               <BookOpen className="h-5 w-5" />
               بنك الاسئلة
@@ -231,7 +231,7 @@ export default function ExamBuilderPage() {
               type="button"
               onClick={() => void handleSaveExam()}
               disabled={saveState === 'saving' || questions.length === 0 || !examTitle.trim()}
-              className="flex items-center gap-2 rounded-xl bg-vision-navy px-6 py-2.5 font-bold text-white shadow-lg transition-opacity disabled:cursor-not-allowed disabled:opacity-60 dark:bg-vision-gold dark:text-vision-navy"
+              className="flex items-center gap-2 rounded-xl bg-vision-navy px-6 py-2.5 font-bold text-white shadow-lg transition-opacity disabled:cursor-not-allowed disabled:opacity-60 bg-[#D4AF37] dark:text-vision-navy"
             >
               <Save className="h-5 w-5" />
               {saveState === 'saving' ? 'جاري الحفظ...' : 'حفظ الامتحان'}
@@ -240,34 +240,34 @@ export default function ExamBuilderPage() {
         </header>
 
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
-          <div className="sticky top-6 space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800 lg:col-span-1">
-            <div className="flex items-center gap-3 border-b border-slate-100 pb-4 dark:border-slate-700">
-              <Settings className="h-5 w-5 text-vision-navy dark:text-vision-gold" />
-              <h2 className="text-lg font-bold text-slate-800 dark:text-white">اعدادات الامتحان</h2>
+          <div className="sticky top-6 space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white lg:col-span-1">
+            <div className="flex items-center gap-3 border-b border-slate-100 pb-4 border-slate-200">
+              <Settings className="h-5 w-5 text-vision-navy text-[#D4AF37]" />
+              <h2 className="text-lg font-bold text-slate-800 text-[#0A2540]">اعدادات الامتحان</h2>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">عنوان الامتحان</label>
+                <label className="mb-2 block text-sm font-bold text-slate-700 text-slate-700">عنوان الامتحان</label>
                 <input
                   type="text"
                   value={examTitle}
                   onChange={(event) => setExamTitle(event.target.value)}
                   placeholder="اكتب اسم الامتحان هنا"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none transition-all focus:border-vision-gold focus:ring-1 focus:ring-vision-gold dark:border-slate-700 dark:bg-slate-900"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none transition-all focus:border-vision-gold focus:ring-1 focus:ring-vision-gold border-slate-200 bg-white"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">نظام الامتحان</label>
-                <div className="grid grid-cols-2 gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2 dark:border-slate-700 dark:bg-slate-900">
+                <label className="mb-2 block text-sm font-bold text-slate-700 text-slate-700">نظام الامتحان</label>
+                <div className="grid grid-cols-2 gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2 border-slate-200 bg-white">
                   <button
                     type="button"
                     onClick={() => setPricingMode('free')}
                     className={`rounded-lg px-3 py-2 text-sm font-bold transition-colors ${
                       pricingMode === 'free'
-                        ? 'bg-vision-navy text-white dark:bg-vision-gold dark:text-vision-navy'
-                        : 'text-slate-500 dark:text-slate-300'
+                        ? 'bg-vision-navy text-white bg-[#D4AF37] dark:text-vision-navy'
+                        : 'text-slate-500 text-slate-700'
                     }`}
                   >
                     مجاني
@@ -277,8 +277,8 @@ export default function ExamBuilderPage() {
                     onClick={() => setPricingMode('paid')}
                     className={`rounded-lg px-3 py-2 text-sm font-bold transition-colors ${
                       pricingMode === 'paid'
-                        ? 'bg-vision-navy text-white dark:bg-vision-gold dark:text-vision-navy'
-                        : 'text-slate-500 dark:text-slate-300'
+                        ? 'bg-vision-navy text-white bg-[#D4AF37] dark:text-vision-navy'
+                        : 'text-slate-500 text-slate-700'
                     }`}
                   >
                     مدفوع
@@ -287,24 +287,24 @@ export default function ExamBuilderPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">سعر الامتحان</label>
+                <label className="mb-2 block text-sm font-bold text-slate-700 text-slate-700">سعر الامتحان</label>
                 <input
                   type="number"
                   min="0"
                   value={examPrice}
                   onChange={(event) => setExamPrice(event.target.value)}
                   placeholder="0"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none transition-all focus:border-vision-gold focus:ring-1 focus:ring-vision-gold dark:border-slate-700 dark:bg-slate-900"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none transition-all focus:border-vision-gold focus:ring-1 focus:ring-vision-gold border-slate-200 bg-white"
                 />
-                <p className="mt-2 text-xs font-bold text-slate-500 dark:text-slate-400">0 يعني مجاني، واي رقم اكبر من 0 يعني مدفوع.</p>
+                <p className="mt-2 text-xs font-bold text-slate-500 text-slate-500">0 يعني مجاني، واي رقم اكبر من 0 يعني مدفوع.</p>
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">المرحلة الدراسية</label>
+                <label className="mb-2 block text-sm font-bold text-slate-700 text-slate-700">المرحلة الدراسية</label>
                 <select
                   value={selectedStage}
                   onChange={(event) => setSelectedStage(event.target.value)}
-                  className="w-full cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none transition-all focus:border-vision-gold focus:ring-1 focus:ring-vision-gold dark:border-slate-700 dark:bg-slate-900"
+                  className="w-full cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none transition-all focus:border-vision-gold focus:ring-1 focus:ring-vision-gold border-slate-200 bg-white"
                 >
                   <option value="">اختر المرحلة</option>
                   <option value="primary">ابتدائي</option>
@@ -314,11 +314,11 @@ export default function ExamBuilderPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">الصف الدراسي</label>
+                <label className="mb-2 block text-sm font-bold text-slate-700 text-slate-700">الصف الدراسي</label>
                 <select
                   value={selectedGrade}
                   onChange={(event) => setSelectedGrade(event.target.value)}
-                  className="w-full cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none transition-all focus:border-vision-gold focus:ring-1 focus:ring-vision-gold dark:border-slate-700 dark:bg-slate-900"
+                  className="w-full cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none transition-all focus:border-vision-gold focus:ring-1 focus:ring-vision-gold border-slate-200 bg-white"
                 >
                   <option value="">اختر الصف</option>
                   <option value="1">الصف الاول</option>
@@ -332,16 +332,16 @@ export default function ExamBuilderPage() {
                   type="checkbox"
                   checked={shuffleQuestions}
                   onChange={(event) => setShuffleQuestions(event.target.checked)}
-                  className="h-5 w-5 cursor-pointer rounded border-slate-300 accent-vision-gold transition-all dark:border-slate-600"
+                  className="h-5 w-5 cursor-pointer rounded border-slate-300 accent-vision-gold transition-all border-slate-200"
                 />
-                <span className="flex select-none items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+                <span className="flex select-none items-center gap-2 text-sm font-bold text-slate-700 text-slate-700">
                   <Shuffle className="h-4 w-4 text-slate-400" />
                   خلط ترتيب الاسئلة
                 </span>
               </label>
 
-              <div className="border-t border-slate-100 pt-4 dark:border-slate-700">
-                <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">المدة بالدقائق (اختياري)</label>
+              <div className="border-t border-slate-100 pt-4 border-slate-200">
+                <label className="mb-2 block text-sm font-bold text-slate-700 text-slate-700">المدة بالدقائق (اختياري)</label>
                 <div className="relative">
                   <input
                     type="number"
@@ -349,7 +349,7 @@ export default function ExamBuilderPage() {
                     value={durationMinutes}
                     onChange={(event) => setDurationMinutes(event.target.value)}
                     placeholder="اكتب مدة الامتحان"
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pr-10 outline-none transition-all focus:border-vision-gold focus:ring-1 focus:ring-vision-gold dark:border-slate-700 dark:bg-slate-900"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pr-10 outline-none transition-all focus:border-vision-gold focus:ring-1 focus:ring-vision-gold border-slate-200 bg-white"
                   />
                   <Clock className="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                 </div>
@@ -357,7 +357,7 @@ export default function ExamBuilderPage() {
 
               {pricingMode === 'paid' ? (
                 <div className="rounded-2xl border border-dashed border-vision-gold/40 bg-vision-gold/5 p-4">
-                  <p className="text-sm font-bold text-slate-700 dark:text-slate-300">الامتحان مدفوع، وسيمكن نشره بعد ربطه بآلية الدفع المناسبة.</p>
+                  <p className="text-sm font-bold text-slate-700 text-slate-700">الامتحان مدفوع، وسيمكن نشره بعد ربطه بآلية الدفع المناسبة.</p>
                 </div>
               ) : (
                 <div className="rounded-2xl border border-dashed border-emerald-200 bg-emerald-50 p-4">
@@ -365,23 +365,23 @@ export default function ExamBuilderPage() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 dark:border-slate-700">
+              <div className="grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 border-slate-200">
                 <div>
-                  <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-300">تاريخ النشر</label>
+                  <label className="mb-1 block text-xs font-bold text-slate-700 text-slate-700">تاريخ النشر</label>
                   <input
                     type="datetime-local"
                     value={publishedAt}
                     onChange={(event) => setPublishedAt(event.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-2 py-2.5 text-xs outline-none transition-all focus:border-vision-gold dark:border-slate-700 dark:bg-slate-900 sm:text-sm"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-2 py-2.5 text-xs outline-none transition-all focus:border-vision-gold border-slate-200 bg-white sm:text-sm"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-300">تاريخ الاغلاق</label>
+                  <label className="mb-1 block text-xs font-bold text-slate-700 text-slate-700">تاريخ الاغلاق</label>
                   <input
                     type="datetime-local"
                     value={endsAt}
                     onChange={(event) => setEndsAt(event.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-2 py-2.5 text-xs outline-none transition-all focus:border-vision-gold dark:border-slate-700 dark:bg-slate-900 sm:text-sm"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-2 py-2.5 text-xs outline-none transition-all focus:border-vision-gold border-slate-200 bg-white sm:text-sm"
                   />
                 </div>
               </div>
@@ -418,7 +418,7 @@ export default function ExamBuilderPage() {
               <button
                 type="button"
                 onClick={() => addQuestion('mcq')}
-                className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-vision-navy/30 py-4 font-bold text-vision-navy transition-all hover:border-vision-navy hover:bg-vision-navy/5 dark:border-vision-gold/30 dark:text-vision-gold dark:hover:border-vision-gold dark:hover:bg-vision-gold/5"
+                className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-vision-navy/30 py-4 font-bold text-vision-navy transition-all hover:border-vision-navy hover:bg-vision-navy/5 dark:border-vision-gold/30 text-[#D4AF37] dark:hover:border-vision-gold dark:hover:bg-vision-gold/5"
               >
                 <Plus className="h-5 w-5" />
                 إضافة سؤال MCQ
@@ -426,19 +426,19 @@ export default function ExamBuilderPage() {
               <button
                 type="button"
                 onClick={() => addQuestion('true_false')}
-                className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-vision-navy/30 py-4 font-bold text-vision-navy transition-all hover:border-vision-navy hover:bg-vision-navy/5 dark:border-vision-gold/30 dark:text-vision-gold dark:hover:border-vision-gold dark:hover:bg-vision-gold/5"
+                className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-vision-navy/30 py-4 font-bold text-vision-navy transition-all hover:border-vision-navy hover:bg-vision-navy/5 dark:border-vision-gold/30 text-[#D4AF37] dark:hover:border-vision-gold dark:hover:bg-vision-gold/5"
               >
                 <Plus className="h-5 w-5" />
                 إضافة سؤال صح/خطأ
               </button>
             </div>
 
-            <div className="rounded-[2rem] border border-slate-200 bg-white/70 p-6 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-[#0A2540]/40">
-              <h3 className="mb-3 flex items-center gap-2 text-lg font-extrabold text-[#0A2540] dark:text-white">
+            <div className="rounded-[2rem] border border-slate-200 bg-white/70 p-6 shadow-sm backdrop-blur-xl border-slate-200 bg-white shadow-sm">
+              <h3 className="mb-3 flex items-center gap-2 text-lg font-extrabold text-[#0A2540] text-[#0A2540]">
                 <CheckCircle2 className="h-5 w-5 text-emerald-500" />
                 جاهز للحفظ
               </h3>
-              <p className="text-sm font-bold leading-6 text-slate-500 dark:text-slate-400">
+              <p className="text-sm font-bold leading-6 text-slate-500 text-slate-500">
                 بعد ربط الحفظ الحقيقي بقاعدة البيانات، هتقدر تنشر الامتحان وتتابع حالة الدفع او المجانية.
               </p>
               {saveMessage ? (
@@ -446,7 +446,7 @@ export default function ExamBuilderPage() {
                   className={`mt-4 rounded-2xl px-4 py-3 text-sm font-bold ${
                     saveState === 'error'
                       ? 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300'
-                      : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300'
+                      : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 text-emerald-800'
                   }`}
                 >
                   {saveMessage}

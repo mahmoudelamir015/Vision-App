@@ -66,7 +66,7 @@ export function ExamPlayerClient({ examId }: ExamPlayerClientProps) {
 
   if (!examId) {
     return (
-      <div className="min-h-screen bg-slate-50 p-6 font-cairo dark:bg-slate-950">
+      <div className="min-h-screen bg-slate-50 p-6 font-cairo bg-slate-50">
         <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-4xl items-center">
           <EmptyState
             icon={FileText}
@@ -82,7 +82,7 @@ export function ExamPlayerClient({ examId }: ExamPlayerClientProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 p-6 font-cairo dark:bg-slate-950">
+      <div className="min-h-screen bg-slate-50 p-6 font-cairo bg-slate-50">
         <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-4xl items-center">
           <EmptyState icon={PlayCircle} title="جارٍ تحميل الامتحان" description="بنجهز بيانات الامتحان من قاعدة البيانات..." />
         </div>
@@ -92,7 +92,7 @@ export function ExamPlayerClient({ examId }: ExamPlayerClientProps) {
 
   if (!exam) {
     return (
-      <div className="min-h-screen bg-slate-50 p-6 font-cairo dark:bg-slate-950">
+      <div className="min-h-screen bg-slate-50 p-6 font-cairo bg-slate-50">
         <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-4xl items-center">
           <EmptyState
             icon={CircleDashed}
@@ -107,9 +107,9 @@ export function ExamPlayerClient({ examId }: ExamPlayerClientProps) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 font-cairo dark:bg-slate-950 sm:p-6">
+    <div className="min-h-screen bg-slate-50 p-4 font-cairo bg-slate-50 sm:p-6">
       <div className="mx-auto max-w-5xl space-y-6">
-        <header className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
+        <header className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-3">
@@ -117,8 +117,8 @@ export function ExamPlayerClient({ examId }: ExamPlayerClientProps) {
                   <FileText className="h-6 w-6" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-extrabold text-[#0A2540] dark:text-white">{exam.title}</h1>
-                  <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">
+                  <h1 className="text-2xl font-extrabold text-[#0A2540] text-[#0A2540]">{exam.title}</h1>
+                  <p className="mt-1 text-sm font-bold text-slate-500 text-slate-500">
                     {exam.pricing_mode === "paid" ? "امتحان مدفوع" : "امتحان مجاني"} • {exam.duration_minutes || 0} دقيقة
                   </p>
                 </div>
@@ -128,17 +128,17 @@ export function ExamPlayerClient({ examId }: ExamPlayerClientProps) {
             <button
               type="button"
               onClick={() => router.push("/student/dashboard")}
-              className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition-all duration-300 ease-in-out hover:bg-slate-100 hover:shadow-md hover:-translate-y-0.5 border-slate-200 bg-slate-50 text-slate-800 dark:hover:bg-white/10"
             >
               العودة
             </button>
           </div>
 
-          <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold text-slate-500 dark:text-slate-400">
-            {exam.stage ? <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-white/5">{exam.stage}</span> : null}
-            {exam.grade ? <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-white/5">{exam.grade}</span> : null}
-            {exam.track ? <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-white/5">{exam.track}</span> : null}
-            <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-white/5">{questions.length} سؤال</span>
+          <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold text-slate-500 text-slate-500">
+            {exam.stage ? <span className="rounded-full bg-slate-100 px-3 py-1 bg-slate-50">{exam.stage}</span> : null}
+            {exam.grade ? <span className="rounded-full bg-slate-100 px-3 py-1 bg-slate-50">{exam.grade}</span> : null}
+            {exam.track ? <span className="rounded-full bg-slate-100 px-3 py-1 bg-slate-50">{exam.track}</span> : null}
+            <span className="rounded-full bg-slate-100 px-3 py-1 bg-slate-50">{questions.length} سؤال</span>
           </div>
         </header>
 
@@ -148,7 +148,7 @@ export function ExamPlayerClient({ examId }: ExamPlayerClientProps) {
               const selectedAnswer = answers[question.id ?? `${index}`];
 
               return (
-                <section key={question.id ?? `${question.exam_id}-${index}`} className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
+                <section key={question.id ?? `${question.exam_id}-${index}`} className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white">
                   <div className="mb-4 flex items-center justify-between gap-3">
                     <span className="rounded-lg bg-[#0A2540]/5 px-3 py-1 text-sm font-bold text-[#0A2540] dark:bg-[#D4AF37]/15 dark:text-[#D4AF37]">
                       سؤال {index + 1}
@@ -158,7 +158,7 @@ export function ExamPlayerClient({ examId }: ExamPlayerClientProps) {
                     </span>
                   </div>
 
-                  <p className="text-lg font-extrabold leading-8 text-[#0A2540] dark:text-white">{question.text}</p>
+                  <p className="text-lg font-extrabold leading-8 text-[#0A2540] text-[#0A2540]">{question.text}</p>
 
                   <div className="mt-5 space-y-3">
                     {question.options.map((option, optionIndex) => (
@@ -167,7 +167,7 @@ export function ExamPlayerClient({ examId }: ExamPlayerClientProps) {
                         className={`flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 transition-all ${
                           selectedAnswer === optionIndex
                             ? "border-[#D4AF37] bg-[#D4AF37]/10"
-                            : "border-slate-200 bg-slate-50 hover:border-[#D4AF37]/50 dark:border-white/10 dark:bg-white/5"
+                            : "border-slate-200 bg-slate-50 hover:border-[#D4AF37]/50 border-slate-200 bg-slate-50"
                         }`}
                       >
                         <input
@@ -177,18 +177,18 @@ export function ExamPlayerClient({ examId }: ExamPlayerClientProps) {
                           onChange={() => setAnswers((current) => ({ ...current, [question.id ?? `${index}`]: optionIndex }))}
                           className="h-4 w-4 accent-[#D4AF37]"
                         />
-                        <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{option}</span>
+                        <span className="text-sm font-bold text-slate-700 text-slate-800">{option}</span>
                       </label>
                     ))}
                   </div>
 
                   {question.explanation ? (
-                    <div className="mt-4 rounded-2xl bg-slate-50 p-4 dark:bg-white/5">
+                    <div className="mt-4 rounded-2xl bg-slate-50 p-4 bg-slate-50">
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400">شرح الإجابة</span>
+                        <span className="text-xs font-bold text-slate-500 text-slate-500">شرح الإجابة</span>
                       </div>
-                      <p className="mt-2 text-sm font-medium leading-6 text-slate-600 dark:text-slate-300">{question.explanation}</p>
+                      <p className="mt-2 text-sm font-medium leading-6 text-slate-600 text-slate-700">{question.explanation}</p>
                     </div>
                   ) : null}
                 </section>
@@ -203,11 +203,11 @@ export function ExamPlayerClient({ examId }: ExamPlayerClientProps) {
           )}
         </div>
 
-        <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
+        <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h2 className="text-lg font-extrabold text-[#0A2540] dark:text-white">مراجعة الإجابات</h2>
-              <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">
+              <h2 className="text-lg font-extrabold text-[#0A2540] text-[#0A2540]">مراجعة الإجابات</h2>
+              <p className="mt-1 text-sm font-bold text-slate-500 text-slate-500">
                 الإجابات بتتسجل محليًا حالياً، وبعد الحفظ هتظهر النتيجة مباشرة هنا.
               </p>
             </div>
