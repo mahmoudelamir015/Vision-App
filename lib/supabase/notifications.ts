@@ -8,6 +8,7 @@ export type NotificationRecord = {
   stage?: string | null;
   grade?: string | null;
   track?: string | null;
+  student_code?: string | null;
   published?: boolean;
   created_at?: string;
 };
@@ -26,17 +27,54 @@ const normalize = (record: SupabaseRecord | null): NotificationRecord | null => 
     stage: typeof record.stage === "string" ? record.stage : null,
     grade: typeof record.grade === "string" ? record.grade : null,
     track: typeof record.track === "string" ? record.track : null,
+    student_code: typeof record.student_code === "string" ? record.student_code : null,
     published: typeof record.published === "boolean" ? record.published : undefined,
     created_at: typeof record.created_at === "string" ? record.created_at : undefined,
   };
 };
 
-export async function fetchNotifications(): Promise<NotificationRecord[]> {
+export async function fetchNotifications(opts?: {
+  studentCode?: string | null;
+  stage?: string | null;
+  grade?: string | null;
+  track?: string | null;
+}): Promise<NotificationRecord[]> {
   const client = getSupabaseClient();
   if (!client) return [];
 
-  const { data, error } = await client.from(supabaseTableNames.notifications).select("*").order("created_at", { ascending: false }).limit(10);
+  // Fetch all published notifications, then filter client-side for the student
+  const { data, error } = await client
+    .from(supabaseTableNames.notifications)
+    .select("*")
+    .eq("published", true)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
   if (error || !Array.isArray(data)) return [];
 
-  return data.map((record) => normalize(record as SupabaseRecord)).filter((record): record is NotificationRecord => Boolean(record));
+  const records = data
+    .map((r) => normalize(r as SupabaseRecord))
+    .filter((r): r is NotificationRecord => Boolean(r));
+
+  if (!opts) return records;
+
+  // Filter: show if broadcast (no student_code, no stage) OR matches student
+  return records.filter((n) => {
+    // Admin-targeted notifications - don't show to students
+    if (n.audience_role === "admin") return false;
+
+    // Individual student notification
+    if (n.student_code) {
+      return opts.studentCode && n.student_code === opts.studentCode;
+    }
+    // Group notification
+    if (n.stage) {
+      const stageMatch = !opts.stage || n.stage === opts.stage;
+      const gradeMatch = !n.grade || n.grade === opts.grade;
+      const trackMatch = !n.track || n.track === opts.track;
+      return stageMatch && gradeMatch && trackMatch;
+    }
+    // Broadcast - show to all
+    return true;
+  });
 }

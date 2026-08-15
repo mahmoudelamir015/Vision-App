@@ -43,6 +43,15 @@ export async function POST(request: Request) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+
+  // Auto-notify admins about the new change request
+  await serviceSupabase.from("notifications").insert({
+    title: `طلب تعديل جديد من ${profile.role === "student" ? "طالب" : profile.role === "teacher" ? "معلم" : "ولي أمر"}`,
+    body: `طلب تعديل الحقل "${requestedField}" القيمة الجديدة: "${newValue}" - السبب: ${reason}`,
+    audience_role: "admin",
+    published: true,
+  });
+
   return NextResponse.json({ request: data });
 }
 

@@ -40,6 +40,10 @@ export default function StudentDashboard() {
   const [notifyGrade, setNotifyGrade] = useState('');
   const [notifyTrack, setNotifyTrack] = useState('');
 
+  // Dismissed notification IDs (local state for Mark as Read)
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
+  const dismissNotification = (id: string) => setDismissedIds((prev) => new Set([...prev, id]));
+
   // Pin attendance states
   const [pin, setPin] = useState('');
   const [isSubmittingPin, setIsSubmittingPin] = useState(false);
@@ -116,20 +120,28 @@ export default function StudentDashboard() {
     let isMounted = true;
 
     const loadDashboardData = async () => {
-      const [notificationsRows, examRows, dashboardResponse] = await Promise.all([
-        fetchNotifications(),
+      const [examRows, dashboardResponse] = await Promise.all([
         fetchPublishedExams(),
         fetch('/api/student/dashboard', { cache: 'no-store' }),
       ]);
       if (!isMounted) return;
 
-      setNotifications(notificationsRows);
       setExams(examRows);
 
       const payload = await dashboardResponse.json().catch(() => null);
       if (dashboardResponse.ok && payload) {
+        const studentData = payload.student ?? null;
         setTeachers(Array.isArray(payload.teachers) ? payload.teachers : []);
-        setStudentProfile(payload.student ?? null);
+        setStudentProfile(studentData);
+
+        // Now fetch notifications filtered for this student
+        const notificationsRows = await fetchNotifications({
+          studentCode: studentData?.student_code ?? null,
+          stage: studentData?.stage ?? null,
+          grade: studentData?.grade ?? null,
+          track: studentData?.track ?? null,
+        });
+        if (isMounted) setNotifications(notificationsRows);
       }
     };
 
@@ -146,9 +158,9 @@ export default function StudentDashboard() {
   const notificationsPanel = (
     <div className="border-b border-slate-200 bg-white p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-bold text-[#0A2540] text-[#0A2540]">الإشعارات</h3>
-        <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-600 bg-slate-100 text-slate-700">
-          {notifications.length} جديد
+        <h3 className="text-sm font-bold text-[#0A2540]">الإشعارات</h3>
+        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700">
+          {notifications.filter((n) => !dismissedIds.has(n.id ?? '')).length} جديد
         </span>
       </div>
 
@@ -207,16 +219,26 @@ export default function StudentDashboard() {
         </div>
       </div>
 
-      {notifications.length > 0 ? (
+      {notifications.filter((n) => !dismissedIds.has(n.id ?? '')).length > 0 ? (
         <div className="space-y-3">
-          {notifications.slice(0, 3).map((notification) => (
-            <div key={notification.id ?? notification.title} className="rounded-2xl bg-white p-4 shadow-sm bg-white">
+          {notifications
+            .filter((n) => !dismissedIds.has(n.id ?? ''))
+            .slice(0, 5)
+            .map((notification) => (
+            <div key={notification.id ?? notification.title} className="rounded-2xl bg-white p-4 shadow-sm">
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h4 className="text-sm font-extrabold text-[#0A2540] text-[#0A2540]">{notification.title}</h4>
-                  <p className="mt-1 text-xs font-medium leading-5 text-slate-500 text-slate-500">{notification.body}</p>
+                <div className="flex-1">
+                  <h4 className="text-sm font-extrabold text-[#0A2540]">{notification.title}</h4>
+                  <p className="mt-1 text-xs font-medium leading-5 text-slate-500">{notification.body}</p>
                 </div>
-                <Bell className="h-4 w-4 shrink-0 text-[#D4AF37]" />
+                <button
+                  type="button"
+                  onClick={() => dismissNotification(notification.id ?? notification.title)}
+                  className="shrink-0 rounded-full p-1 text-slate-300 hover:text-slate-500"
+                  title="إخفاء"
+                >
+                  <span className="text-xs font-bold">✕</span>
+                </button>
               </div>
             </div>
           ))}
@@ -225,7 +247,7 @@ export default function StudentDashboard() {
         <EmptyState
           icon={Bell}
           title="لا توجد إشعارات جديدة"
-          description="أي تحديث من الإدارة أو المعلم هيظهر هنا بعد تفعيل الـ Realtime والربط الكامل."
+          description="أي تحديث من الإدارة أو المعلم هيظهر هنا فور إرساله."
         />
       )}
     </div>
@@ -363,19 +385,21 @@ export default function StudentDashboard() {
         );
       case 'archive':
         return (
-          <EmptyState
-            icon={Archive}
-            title="لا يوجد أرشيف حتى الآن"
-            description="نتائجك وسجل استخدامك هيظهروا هنا بعد تفعيل المتابعة."
-          />
+          <div className="space-y-4">
+            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-md">
+              <h2 className="text-xl font-extrabold text-[#0A2540] mb-2">أرشيف الاختبارات</h2>
+              <p className="text-sm font-bold text-slate-500">سيظهر هنا سجل الاختبارات التي أديتها مع درجاتك بعد مراجعة النتائج من الإدارة.</p>
+            </div>
+          </div>
         );
       case 'leaderboard':
         return (
-          <EmptyState
-            icon={Trophy}
-            title="لا يوجد ترتيب منشور"
-            description="الترتيب العام هيظهر هنا بعد إرساله من لوحة الإدارة."
-          />
+          <div className="space-y-4">
+            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-md">
+              <h2 className="text-xl font-extrabold text-[#0A2540] mb-2">ترتيب الطلاب</h2>
+              <p className="text-sm font-bold text-slate-500">يُحدّث الترتيب تلقائياً بعد كل اختبار تؤديه. ستجد اسمك ودرجتك النسبية بين زملائك هنا.</p>
+            </div>
+          </div>
         );
       case 'dashboard':
       default:
