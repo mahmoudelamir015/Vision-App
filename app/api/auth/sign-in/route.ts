@@ -60,9 +60,9 @@ export async function POST(request: Request) {
   }
   const { data: matchingProfiles } = await serviceSupabase
     .from("users")
-    .select("extra")
+    .select("extra, role")
     .in("phone", candidatePhones)
-    .in("role", ["student", "parent", "teacher"]);
+    .in("role", expectedRole ? [expectedRole] : ["student", "parent", "teacher"]);
 
   matchingProfiles?.forEach((profile) => {
     const authEmail = getProfileAuthEmail((profile as { extra?: unknown }).extra);
@@ -87,7 +87,7 @@ export async function POST(request: Request) {
   }
 
   if (error || !data?.user) {
-    return attachBufferedCookies(NextResponse.json({ error: "رقم الهاتف أو كلمة المرور غير صحيحة" }, { status: 401 }));
+    return attachBufferedCookies(NextResponse.json({ error: "بيانات غير صحيحة أو الحساب غير مصرح له" }, { status: 401 }));
   }
 
   const { data: linkedProfile } = await serviceSupabase
@@ -103,7 +103,7 @@ export async function POST(request: Request) {
       .from("users")
       .select("id, auth_user_id, name, phone, role, extra")
       .in("phone", candidatePhones)
-      .in("role", ["student", "parent", "teacher"]);
+      .in("role", expectedRole ? [expectedRole] : ["student", "parent", "teacher"]);
 
     if (Array.isArray(fallbackProfiles) && fallbackProfiles.length > 0) {
       profile = fallbackProfiles[0];
@@ -116,12 +116,12 @@ export async function POST(request: Request) {
 
   if (!profile || !["student", "parent", "teacher"].includes(profile.role)) {
     await supabase.auth.signOut();
-    return attachBufferedCookies(NextResponse.json({ error: "الحساب غير مهيأ للدخول" }, { status: 403 }));
+    return attachBufferedCookies(NextResponse.json({ error: "بيانات غير صحيحة أو الحساب غير مصرح له" }, { status: 403 }));
   }
 
   if (expectedRole && profile.role !== expectedRole) {
     await supabase.auth.signOut();
-    return attachBufferedCookies(NextResponse.json({ error: "يجب تسجيل الدخول من البوابة الصحيحة" }, { status: 401 }));
+    return attachBufferedCookies(NextResponse.json({ error: "بيانات غير صحيحة أو الحساب غير مصرح له" }, { status: 401 }));
   }
 
   return attachBufferedCookies(NextResponse.json({ profile }));
