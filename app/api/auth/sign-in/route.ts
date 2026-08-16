@@ -12,45 +12,33 @@ type SignInBody = {
   expectedRole?: "student" | "parent" | "teacher";
 };
 
-function makeAuthEmail(phone: string) {
-  const digits = phone.replace(/\D/g, "");
-  return `${digits}@vision-center.com`;
-}
-
-function getProfileAuthEmail(extra: unknown) {
-  if (!extra || typeof extra !== "object") return null;
-  const value = (extra as { auth_email?: unknown }).auth_email;
-  return typeof value === "string" && value.trim() ? value.trim() : null;
-}
-
 export async function POST(request: Request) {
-  const body = (await request.json()) as SignInBody;
+  const body = (await request.json().catch(() => ({}))) as SignInBody;
   const rawPhone = typeof body.phone === "string" ? body.phone.trim() : "";
-  const phone = normalizeEgyptianPhone(rawPhone);
+  const normalizedPhone = normalizeEgyptianPhone(rawPhone);
   const password = typeof body.password === "string" ? body.password : "";
   const expectedRole = body.expectedRole;
 
-  if (!phone || password.length < 8) {
+  if (!rawPhone || password.length < 8) {
     return NextResponse.json({ error: "بيانات الدخول غير صحيحة" }, { status: 400 });
   }
 
   const cookieStore = await cookies();
   const { supabase, attachBufferedCookies } = createRouteSupabaseClientWithBufferedCookies(cookieStore);
   const serviceSupabase = createServiceSupabaseClient();
-  let localPart = "";
+
   const rawDigits = rawPhone.replace(/\D/g, "");
+  let localPart = "";
   if (rawDigits.startsWith("20")) localPart = rawDigits.slice(2);
   else if (rawDigits.startsWith("0")) localPart = rawDigits.slice(1);
   else localPart = rawDigits;
 
   const candidatePhones = Array.from(
-    new Set([
-      phone,
-      `0${localPart}`,
-      `+20${localPart}`,
-      `20${localPart}`,
-      rawPhone,
-    ].filter((value): value is string => Boolean(value))),
+    new Set(
+      [normalizedPhone, rawPhone, `0${localPart}`, `+20${localPart}`, `20${localPart}`].filter(
+        (v): v is string => Boolean(v),
+      ),
+    ),
   );
 
   const authEmailCandidates = new Set<string>();
@@ -58,70 +46,89 @@ export async function POST(request: Request) {
     authEmailCandidates.add(`0${localPart}@vision-center.com`);
     authEmailCandidates.add(`20${localPart}@vision-center.com`);
   }
-  const { data: matchingProfiles } = await serviceSupabase
-    .from("users")
-    .select("extra, role")
-    .in("phone", candidatePhones)
-    .in("role", expectedRole ? [expectedRole] : ["student", "parent", "teacher"]);
 
-  matchingProfiles?.forEach((profile) => {
-    const authEmail = getProfileAuthEmail((profile as { extra?: unknown }).extra);
-    if (authEmail) {
-      authEmailCandidates.add(authEmail);
+  const { data: dbMatches } = await serviceSupabase
+    .from("users")
+    .select("extra")
+    .in("phone", candidatePhones);
+
+  dbMatches?.forEach((row: any) => {
+    if (row?.extra?.auth_email && typeof row.extra.auth_email === "string") {
+      authEmailCandidates.add(row.extra.auth_email.trim());
     }
   });
 
-  let data: { user: { id: string } | null } | null = null;
-  let error: { message?: string } | null = null;
+  let authUser: { id: string } | null = null;
 
-  const attempts = [
-    ...candidatePhones.map((candidatePhone) => () => supabase.auth.signInWithPassword({ phone: candidatePhone, password })),
-    ...Array.from(authEmailCandidates).map((candidateEmail) => () => supabase.auth.signInWithPassword({ email: candidateEmail, password })),
-  ];
-
-  for (const attempt of attempts) {
-    const result = await attempt();
-    data = result.data;
-    error = result.error;
-    if (!error && data?.user) break;
+  for (const phoneAttempt of candidatePhones) {
+    const res = await supabase.auth.signInWithPassword({ phone: phoneAttempt, password });
+    if (!res.error && res.data?.user) {
+      authUser = res.data.user;
+      break;
+    }
   }
 
-  if (error || !data?.user) {
-    return attachBufferedCookies(NextResponse.json({ error: "بيانات غير صحيحة أو الحساب غير مصرح له" }, { status: 401 }));
-  }
-
-  const { data: linkedProfile } = await serviceSupabase
-    .from("users")
-    .select("id, auth_user_id, name, phone, role, extra")
-    .eq("auth_user_id", data.user.id)
-    .maybeSingle();
-
-  let profile = linkedProfile;
-
-  if (!profile) {
-    const { data: fallbackProfiles } = await serviceSupabase
-      .from("users")
-      .select("id, auth_user_id, name, phone, role, extra")
-      .in("phone", candidatePhones)
-      .in("role", expectedRole ? [expectedRole] : ["student", "parent", "teacher"]);
-
-    if (Array.isArray(fallbackProfiles) && fallbackProfiles.length > 0) {
-      profile = fallbackProfiles[0];
-
-      if (profile.id && profile.auth_user_id !== data.user.id) {
-        await serviceSupabase.from("users").update({ auth_user_id: data.user.id }).eq("id", profile.id);
+  if (!authUser) {
+    for (const emailAttempt of Array.from(authEmailCandidates)) {
+      const res = await supabase.auth.signInWithPassword({ email: emailAttempt, password });
+      if (!res.error && res.data?.user) {
+        authUser = res.data.user;
+        break;
       }
     }
   }
 
-  if (!profile || !["student", "parent", "teacher"].includes(profile.role)) {
-    await supabase.auth.signOut();
-    return attachBufferedCookies(NextResponse.json({ error: "بيانات غير صحيحة أو الحساب غير مصرح له" }, { status: 403 }));
+  if (!authUser) {
+    return attachBufferedCookies(
+      NextResponse.json({ error: "رقم الهاتف أو كلمة المرور غير صحيحة" }, { status: 401 }),
+    );
   }
 
-  if (expectedRole && profile.role !== expectedRole) {
+  let profile: any = null;
+
+  const { data: profileById } = await serviceSupabase
+    .from("users")
+    .select("id, auth_user_id, name, phone, role, extra")
+    .or(`auth_user_id.eq.${authUser.id},id.eq.${authUser.id}`)
+    .maybeSingle();
+
+  profile = profileById;
+
+  if (!profile) {
+    const { data: profileByPhone } = await serviceSupabase
+      .from("users")
+      .select("id, auth_user_id, name, phone, role, extra")
+      .in("phone", candidatePhones)
+      .maybeSingle();
+
+    if (profileByPhone) {
+      profile = profileByPhone;
+      if (profile.id) {
+        await serviceSupabase.from("users").update({ auth_user_id: authUser.id }).eq("id", profile.id);
+      }
+    }
+  }
+
+  if (!profile) {
+    const meta = (authUser as any).user_metadata || {};
+    profile = {
+      id: authUser.id,
+      auth_user_id: authUser.id,
+      name: meta.name || meta.full_name || "مستخدم",
+      phone: (authUser as any).phone || rawPhone,
+      role: meta.role || expectedRole || "student",
+      extra: {},
+    };
+  }
+
+  const currentRole = String(profile.role || "").trim().toLowerCase();
+  const reqRole = expectedRole ? String(expectedRole).trim().toLowerCase() : null;
+
+  if (reqRole && currentRole !== reqRole) {
     await supabase.auth.signOut();
-    return attachBufferedCookies(NextResponse.json({ error: "بيانات غير صحيحة أو الحساب غير مصرح له" }, { status: 401 }));
+    return attachBufferedCookies(
+      NextResponse.json({ error: "الحساب غير مصرح له بالدخول من هذه البوابة" }, { status: 401 }),
+    );
   }
 
   return attachBufferedCookies(NextResponse.json({ profile }));

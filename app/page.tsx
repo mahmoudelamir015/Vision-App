@@ -76,6 +76,7 @@ function Field({
   error?: string;
   children?: ReactNode;
 }) {
+  const isPhone = name.includes("phone") || name.includes("identifier");
   return (
     <label className="block text-sm font-bold text-[#0A2540]">
       <span>{label}</span>
@@ -85,9 +86,10 @@ function Field({
             name={name}
             type={type}
             placeholder={placeholder}
-            dir={name.includes("phone") || name.includes("identifier") ? "ltr" : undefined}
+            dir={isPhone ? "ltr" : undefined}
+            style={isPhone ? { unicodeBidi: "plaintext", direction: "ltr" } : undefined}
             className={`w-full rounded-2xl border bg-white px-4 py-3.5 text-[#0A2540] outline-none transition-all placeholder:text-slate-400 focus:ring-4 ${
-              name.includes("phone") || name.includes("identifier") ? "text-right font-mono tracking-wider" : ""
+              isPhone ? "text-left font-mono tracking-wider" : ""
             } ${
               error
                 ? "border-red-300 focus:border-red-400 focus:ring-red-400/10"
