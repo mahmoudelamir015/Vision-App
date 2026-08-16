@@ -52,7 +52,7 @@ export default function PasswordResetVerifyForm() {
       <form className="mt-4 space-y-3" onSubmit={submit}>
         <label className="block text-sm font-bold">
           رقم الهاتف
-          <input disabled value={phone} className="mt-1 w-full rounded-md border bg-slate-50 px-3 py-2" />
+          <input disabled value={phone?.replace(/^\+?20/, '0')} className="mt-1 w-full rounded-md border bg-slate-50 px-3 py-2" />
         </label>
         <label className="block text-sm font-bold">
           كلمة المرور الجديدة
