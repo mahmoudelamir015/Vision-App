@@ -8,8 +8,12 @@ const routeRoles: Array<{ prefix: string; role: string }> = [
 ];
 
 export async function middleware(request: NextRequest) {
-  const required = routeRoles.find(({ prefix }) => request.nextUrl.pathname.startsWith(prefix));
-  if (!required || request.nextUrl.pathname.includes("/signup")) return NextResponse.next();
+  const pathname = request.nextUrl.pathname;
+  const isAdminRoute = pathname.startsWith("/admin");
+  const required = routeRoles.find(({ prefix }) => pathname.startsWith(prefix));
+
+  if (!required && !isAdminRoute) return NextResponse.next();
+  if (pathname.includes("/signup")) return NextResponse.next();
 
   let response = NextResponse.next({ request });
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -44,16 +48,24 @@ export async function middleware(request: NextRequest) {
 
   if (!profile) return applyRedirect("/");
 
-  // Allow staff or master_admin with manage_teachers / gate permission to access teacher routes
   const permissions: string[] = Array.isArray(profile.permissions) ? profile.permissions : [];
   const isMasterAdmin = profile.role === "master_admin" || (process.env.MASTER_ADMIN_EMAIL && user.email === process.env.MASTER_ADMIN_EMAIL);
+  const isStaffAdmin = profile.role === "staff";
+
+  if (isAdminRoute) {
+    if (!isMasterAdmin && !isStaffAdmin) {
+      return applyRedirect("/");
+    }
+    return response;
+  }
+
   const isStaffTeacherManager = profile.role === "staff" && (permissions.includes("manage_teachers") || permissions.includes("gate"));
 
-  if (profile.role !== required.role && !isMasterAdmin && !(required.role === "teacher" && isStaffTeacherManager)) {
+  if (required && profile.role !== required.role && !isMasterAdmin && !(required.role === "teacher" && isStaffTeacherManager)) {
     return applyRedirect("/");
   }
 
   return response;
 }
 
-export const config = { matcher: ["/student/:path*", "/parent/:path*", "/teacher/:path*"] };
+export const config = { matcher: ["/student/:path*", "/parent/:path*", "/teacher/:path*", "/admin/:path*"] };

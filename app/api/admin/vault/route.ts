@@ -5,8 +5,9 @@ import { createServiceSupabaseClient } from "@/lib/supabase/admin";
 export async function GET(request: Request) {
   try {
     const profile = await getCurrentAppProfile();
-    if (!profile) {
-      return NextResponse.json({ error: "غير مصرح لك بالوصول" }, { status: 401 });
+    const role = profile?.role as string;
+    if (!profile || (role !== "master_admin" && role !== "staff")) {
+      return NextResponse.json({ error: "غير مصرح لك بالوصول الخزنة الإدارية" }, { status: 401 });
     }
 
     const supabase = createServiceSupabaseClient();
@@ -53,8 +54,8 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const profile = await getCurrentAppProfile();
-    if (!profile) {
-      return NextResponse.json({ error: "غير مصرح لك بالوصول" }, { status: 401 });
+    if (!profile || (profile.role !== "master_admin" && profile.role !== "staff" as string)) {
+      return NextResponse.json({ error: "غير مصرح لك بالوصول الخزنة الإدارية" }, { status: 401 });
     }
 
     const body = await request.json();

@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { createServiceSupabaseClient } from "@/lib/supabase/admin";
 import { createRouteSupabaseClient } from "@/lib/supabase/server";
 
-export type AppRole = "student" | "parent" | "teacher";
+export type AppRole = "student" | "parent" | "teacher" | "staff" | "master_admin";
 
 export type AppProfile = {
   id: string;
@@ -35,7 +35,7 @@ export async function getCurrentAppSession(): Promise<AppSession | null> {
     .eq("auth_user_id", user.id)
     .maybeSingle();
 
-  if (!data || !["student", "parent", "teacher"].includes(data.role)) return null;
+  if (!data || !["student", "parent", "teacher", "staff", "master_admin"].includes(data.role)) return null;
   return {
     authUserId: user.id,
     profile: data as AppProfile,

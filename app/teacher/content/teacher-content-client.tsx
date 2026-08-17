@@ -176,44 +176,28 @@ export default function TeacherContentClient({ teacherId, teacherName }: Props) 
       return;
     }
 
-    const client = getSupabaseClient();
-    if (!client) {
-      setFeedback({ type: "error", message: "خدمة الرفع غير مهيأة حالياً." });
-      return;
-    }
-
     setUploading(true);
 
     try {
-      const safeFileName = selectedFile.name.replace(/[^\w.-]+/g, "_");
-      const storagePath = `${teacherId}/${Date.now()}-${safeFileName}`;
-      const uploadResult = await client.storage.from("teacher_materials").upload(storagePath, selectedFile, {
-        cacheControl: "3600",
-        upsert: false,
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+      formData.append("title", form.title.trim());
+      formData.append("subject", form.subject.trim());
+      formData.append("price", form.price);
+
+      const response = await fetch("/api/teacher/materials/upload", {
+        method: "POST",
+        body: formData,
       });
 
-      if (uploadResult.error) {
-        throw new Error(uploadResult.error.message || "حدث خطأ أثناء رفع الملف.");
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "حدث خطأ أثناء رفع الملف.");
       }
 
-      const { data: publicUrlData } = client.storage.from("teacher_materials").getPublicUrl(storagePath);
-      const saved = await createTeacherMaterial({
-        teacher_user_id: teacherId,
-        title: form.title.trim(),
-        description: null,
-        file_url: publicUrlData.publicUrl,
-        file_name: selectedFile.name,
-        file_type: selectedFile.type || null,
-        subject: form.subject.trim() || null,
-        price: Number(form.price || 0),
-        published: true,
-      });
-
-      if (!saved) {
-        throw new Error("تم رفع الملف لكن تعذر حفظ البيانات في الجدول.");
+      if (data.material) {
+        setMaterials((current) => [data.material, ...current]);
       }
-
-      setMaterials((current) => [saved, ...current]);
       setIsModalOpen(false);
       setForm(initialFormState);
       setSelectedFile(null);
