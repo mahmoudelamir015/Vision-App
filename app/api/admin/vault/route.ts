@@ -1,30 +1,30 @@
 import { NextResponse } from "next/server";
-import { getCurrentAdminProfile } from "@/lib/auth/session";
+import { getCurrentAppProfile } from "@/lib/auth/session";
 import { createServiceSupabaseClient } from "@/lib/supabase/admin";
 
 export async function GET(request: Request) {
   try {
-    const profile = await getCurrentAdminProfile();
+    const profile = await getCurrentAppProfile();
     if (!profile) {
       return NextResponse.json({ error: "غير مصرح لك بالوصول" }, { status: 401 });
     }
 
     const supabase = createServiceSupabaseClient();
-    
+
     // Fetch transactions from database
-    const { data: transactions, error: transError } = await supabase
+    const { data: transactions } = await supabase
       .from("transactions")
       .select("*")
       .order("created_at", { ascending: false });
 
     // Fetch settlements
-    const { data: settlements, error: setError } = await supabase
+    const { data: settlements } = await supabase
       .from("settlements")
       .select("*")
       .order("settled_at", { ascending: false });
 
     // Fetch total wallet entries from wallets table as well
-    const { data: wallets, error: walletError } = await supabase
+    const { data: wallets } = await supabase
       .from("wallets")
       .select("*")
       .order("created_at", { ascending: false });
@@ -52,7 +52,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const profile = await getCurrentAdminProfile();
+    const profile = await getCurrentAppProfile();
     if (!profile) {
       return NextResponse.json({ error: "غير مصرح لك بالوصول" }, { status: 401 });
     }

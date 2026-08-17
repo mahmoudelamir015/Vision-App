@@ -57,6 +57,7 @@ export function ProfileEditor({ role, title, description, showPhoto = false, edi
   const [requestReason, setRequestReason] = useState('');
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [newPassword, setNewPassword] = useState('');
+  const [requestSubmitting, setRequestSubmitting] = useState(false);
 
   useEffect(() => {
     const loadProfile = async () => {
