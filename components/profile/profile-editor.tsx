@@ -55,7 +55,8 @@ export function ProfileEditor({ role, title, description, showPhoto = false, edi
   const [requestField, setRequestField] = useState<ChangeRequestField>('phone');
   const [requestValue, setRequestValue] = useState('');
   const [requestReason, setRequestReason] = useState('');
-  const [requestSubmitting, setRequestSubmitting] = useState(false);
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -119,9 +120,12 @@ export function ProfileEditor({ role, title, description, showPhoto = false, edi
     }
   };
 
-  const handleChangePassword = async () => {
-    const password = window.prompt('اكتب كلمة المرور الجديدة (8 احرف على الاقل):');
-    if (!password || password.trim().length < 8) return;
+  const handleChangePassword = async (event?: React.FormEvent) => {
+    if (event) event.preventDefault();
+    if (!newPassword || newPassword.trim().length < 8) {
+      setFeedback({ type: 'error', message: 'كلمة المرور يجب أن تكون 8 أحرف على الأقل.' });
+      return;
+    }
 
     setPasswordLoading(true);
     setFeedback(null);
@@ -130,11 +134,13 @@ export function ProfileEditor({ role, title, description, showPhoto = false, edi
       const response = await fetch('/api/auth/change-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: password.trim() }),
+        body: JSON.stringify({ password: newPassword.trim() }),
       });
       const payload = (await response.json().catch(() => null)) as { error?: string } | null;
       if (!response.ok) throw new Error(payload?.error ?? 'تعذر تغيير كلمة المرور');
       setFeedback({ type: 'success', message: 'تم تغيير كلمة المرور بنجاح.' });
+      setPasswordModalOpen(false);
+      setNewPassword('');
     } catch (error) {
       setFeedback({ type: 'error', message: error instanceof Error ? error.message : 'تعذر تغيير كلمة المرور' });
     } finally {
@@ -177,7 +183,8 @@ export function ProfileEditor({ role, title, description, showPhoto = false, edi
     }
   };
   const showLockedField = (field: ChangeRequestField, value: string | undefined) => {
-    const displayValue = field === 'stage' ? formatStage(value) : (value || '-');
+    const formattedVal = field === 'phone' ? value?.replace(/^\+?20/, '0') : value;
+    const displayValue = field === 'stage' ? formatStage(formattedVal) : (formattedVal || '-');
     return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
       <div className="flex items-center justify-between gap-3">
@@ -283,9 +290,9 @@ export function ProfileEditor({ role, title, description, showPhoto = false, edi
               <Save className="h-4 w-4" />
               {saving ? 'جاري الحفظ...' : 'حفظ التعديلات'}
             </button>
-            <button type="button" onClick={handleChangePassword} disabled={passwordLoading} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-600">
+            <button type="button" onClick={() => setPasswordModalOpen(true)} disabled={passwordLoading} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-600">
               <ShieldCheck className="h-4 w-4" />
-              {passwordLoading ? 'جاري تغيير كلمة المرور...' : 'تغيير كلمة المرور'}
+              تغيير كلمة المرور
             </button>
             <button type="button" onClick={() => router.push(`/${role}/dashboard`)} className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-600">
               العودة للوحة
@@ -322,6 +329,43 @@ export function ProfileEditor({ role, title, description, showPhoto = false, edi
                 {requestSubmitting ? 'جاري الإرسال...' : 'إرسال الطلب'}
               </button>
               <button type="button" onClick={() => setRequestOpen(false)} className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-600">
+                إلغاء
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
+
+      {passwordModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 animate-fade-in">
+          <form onSubmit={handleChangePassword} className="w-full max-w-md rounded-[2rem] bg-white p-6 shadow-2xl space-y-4">
+            <h2 className="text-xl font-extrabold text-[#0A2540]">تغيير كلمة المرور</h2>
+            <p className="text-sm font-bold text-slate-500">ادخل كلمة المرور الجديدة (8 أحرف على الأقل).</p>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-1">كلمة المرور الجديدة</label>
+              <input
+                type="password"
+                required
+                minLength={8}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="********"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-[#D4AF37]"
+              />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button
+                type="submit"
+                disabled={passwordLoading}
+                className="flex-1 rounded-2xl bg-[#0A2540] py-3 text-sm font-bold text-white transition hover:bg-[#0A2540]/90 disabled:opacity-50"
+              >
+                {passwordLoading ? "جارٍ الحفظ..." : "حفظ كلمة المرور"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPasswordModalOpen(false)}
+                className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-100"
+              >
                 إلغاء
               </button>
             </div>

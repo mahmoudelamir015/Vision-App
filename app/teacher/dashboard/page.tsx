@@ -36,17 +36,27 @@ export default function TeacherDashboard() {
     { value: 'math', label: 'علمي رياضة' },
   ];
 
+  const [stats, setStats] = useState<{ students: number; exams: number; materials: number; revenue: number } | null>(null);
+
   useEffect(() => {
     let isMounted = true;
 
-    const loadNotifications = async () => {
-      const rows = await fetchNotifications();
-      if (isMounted) {
-        setNotifications(rows);
+    const loadData = async () => {
+      try {
+        const [notifs, statsRes] = await Promise.all([
+          fetchNotifications(),
+          fetch('/api/teacher/stats').then((res) => (res.ok ? res.json() : null)),
+        ]);
+        if (isMounted) {
+          setNotifications(notifs);
+          if (statsRes) setStats(statsRes);
+        }
+      } catch (e) {
+        console.error(e);
       }
     };
 
-    void loadNotifications();
+    void loadData();
 
     return () => {
       isMounted = false;
@@ -135,7 +145,7 @@ export default function TeacherDashboard() {
         <EmptyState
           icon={Bell}
           title="لا توجد إشعارات جديدة"
-          description="أي تحديث من الإدارة أو من لوحة الطالب سيظهر هنا بعد تفعيل الربط الكامل."
+          description="جميع الإشعارات والتحديثات الخاصة بحسابك ستظهر هنا."
         />
       )}
     </div>
@@ -172,7 +182,7 @@ export default function TeacherDashboard() {
           <EmptyState
             icon={Users}
             title="لا توجد صفوف مرتبطة حالياً"
-            description="الصفوف والطلاب المرتبطين هيتم سحبهم من قاعدة البيانات بعد اكتمال الربط."
+            description="الصفوف والطلاب المرتبطين بحسابك يظهرون هنا بمجرد إضافتهم."
           />
         );
       case 'exam-builder':
@@ -200,19 +210,39 @@ export default function TeacherDashboard() {
           <EmptyState
             icon={PieChart}
             title="لا توجد تقارير بعد"
-            description="التقارير والإحصائيات ستظهر هنا عند تفعيل البيانات الفعلية."
+            description="التقارير والإحصائيات الخاصة بطلابك وامتحاناتك ستظهر هنا."
           />
         );
       case 'dashboard':
       default:
         return (
-          <EmptyState
-            icon={LayoutDashboard}
-            title="لوحة المعلم الرئيسية"
-            description="من هنا هيظهر كل ما يخص الصفوف والامتحانات والإشعارات بعد اكتمال الربط."
-            actionLabel="اذهب إلى بناء الامتحان"
-            onAction={() => setActiveTab('exam-builder')}
-          />
+          <div className="space-y-6">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <p className="text-xs font-bold text-slate-500">عدد الطلبة الفعلي</p>
+                <h3 className="mt-2 text-3xl font-black text-[#0A2540]">{stats?.students ?? 0}</h3>
+              </div>
+              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <p className="text-xs font-bold text-slate-500">الامتحانات المنشورة</p>
+                <h3 className="mt-2 text-3xl font-black text-[#0A2540]">{stats?.exams ?? 0}</h3>
+              </div>
+              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <p className="text-xs font-bold text-slate-500">المحتويات التعليمية</p>
+                <h3 className="mt-2 text-3xl font-black text-[#0A2540]">{stats?.materials ?? 0}</h3>
+              </div>
+              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <p className="text-xs font-bold text-slate-500">إجمالي قيمة المحتوى المرفوع</p>
+                <h3 className="mt-2 text-3xl font-black text-[#D4AF37]">{(stats?.revenue ?? 0).toLocaleString('ar-EG')} ج.م</h3>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="text-lg font-black text-[#0A2540]">مرحباً بك في لوحة تحكم المعلم</h3>
+              <p className="mt-2 text-sm font-bold text-slate-600 leading-relaxed">
+                يمكنك من خلال القائمة الجانبية إدارة المحتوى التعليمي، إنشاء وتخصيص الامتحانات الإلكترونية، وتتبع إحصائيات طلابك مباشرة.
+              </p>
+            </div>
+          </div>
         );
     }
   })();

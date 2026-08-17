@@ -56,7 +56,7 @@ export function QuestionBankModal({
             <EmptyState
               icon={BookOpen}
               title="بنك الأسئلة فارغ حالياً"
-              description="لن تظهر أسئلة وهمية هنا. بعد ربط الـ backend ستظهر الأسئلة الجاهزة للاستيراد مباشرة."
+              description="لا توجد أسئلة مضافة في بنك الأسئلة حالياً. يمكنك إضافة أسئلة جديدة واستيرادها مباشرة."
             />
           ) : (
             questions.map((question) => (

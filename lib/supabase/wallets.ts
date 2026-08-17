@@ -12,10 +12,9 @@ export type WalletEntry = {
 
 const normalize = (record: SupabaseRecord | null): WalletEntry | null => {
   if (!record) return null;
-  const owner = typeof record.owner === "string" ? record.owner : "";
-  const account_type = typeof record.account_type === "string" ? record.account_type : "";
+  const owner = (typeof record.owner === "string" && record.owner.trim()) || (typeof record.student_phone === "string" && record.student_phone) || "معاملة مالية";
+  const account_type = (typeof record.account_type === "string" && record.account_type.trim()) || "student";
   const amount = typeof record.amount === "number" ? record.amount : Number(record.amount ?? 0);
-  if (!owner || !account_type) return null;
   return {
     id: typeof record.id === "string" ? record.id : undefined,
     owner,

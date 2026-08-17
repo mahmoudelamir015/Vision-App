@@ -4,7 +4,7 @@ let serviceClient: SupabaseClient | null = null;
 
 function getServiceRoleConfig() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SERVICE_ROLE_KEY;
 
   if (!url || !key) {
     throw new Error("Supabase service role is not configured");
