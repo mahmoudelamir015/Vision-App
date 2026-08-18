@@ -23,13 +23,21 @@ export async function POST(request: Request) {
     const supabase = createServiceSupabaseClient();
     const bucketName = "teacher_materials";
 
-    // 1. Ensure bucket exists
-    const { data: bucket, error: bucketError } = await supabase.storage.getBucket(bucketName);
-    if (bucketError || !bucket) {
-      await supabase.storage.createBucket(bucketName, {
+    // 1. Ensure bucket exists. The service client is used here so this also
+    // works on projects where the storage migration has not been applied yet.
+    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+    const bucketExists = buckets?.some((bucket) => bucket.name === bucketName) ?? false;
+    if (bucketsError && !bucketExists) {
+      return NextResponse.json({ error: `تعذر التحقق من مخزن الملفات: ${bucketsError.message}` }, { status: 500 });
+    }
+    if (!bucketExists) {
+      const { error: createBucketError } = await supabase.storage.createBucket(bucketName, {
         public: true,
-        fileSizeLimit: 52428800, // 50MB
+        fileSizeLimit: 52428800,
       });
+      if (createBucketError && !createBucketError.message.toLowerCase().includes("already exists")) {
+        return NextResponse.json({ error: `تعذر إنشاء مخزن الملفات: ${createBucketError.message}` }, { status: 500 });
+      }
     }
 
     // 2. Upload file
